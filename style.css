@@ -720,6 +720,7 @@ body {
 }
 .destovka-product-card-footer {
     display: flex;
+    flex-direction: column;
     gap: 12px;
     align-items: center;
     padding-top: 12px;
@@ -736,5 +737,171 @@ body {
     color: white;
 }
 
+
+.destovka-back-to-categories {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    color: var(--destovka-inactive);
+    background: white;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-bottom: 24px;
+    width: fit-content;
+}
+
+.destovka-back-to-categories:hover {
+    border-color: var(--destovka-inactive);
+}
+
+.destovka-back-to-categories svg {
+    width: 20px;
+    height: 20px;
+}
+
+
+.destovka-product-specs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background-color: var(--destovka-bg-light);
+    border-radius: 6px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.destovka-product-spec {
+    font-size: 14px;
+    color: var(--destovka-secondary-text-color);
+    text-align: center;
+}
+
+
+
+.destovka-product-potrubi-card-container {
+    width: fit-content;
+    color: var(--destovka-text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border: 2px solid var(--destovka-border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1); 
+}
+.destovka-product-potrubi-card-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+.destovka-product-potrubi-card-input-column {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.destovka-product-potrubi-card-input-row-container {
+    width: 100%;
+}
+.destovka-product-potrubi-card-input-row-title { 
+    font-weight: 500;
+}
+.destovka-product-potrubi-card-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-left: 12px;
+}
+.destovka-product-potrubi-card-input {
+    max-width: 60px;
+    height: 40px;
+    font-size: 16px;
+    text-align: center;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+}
+.destovka-product-potrubi-card-input-container{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+
+
+.destovka-product-geigery-card-container {
+    width: fit-content;
+    color: var(--destovka-text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border: 2px solid var(--destovka-border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1); 
+}
+.destovka-product-geigery-card-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.destovka-product-geigery-card-info-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.destovka-product-geigery-card-colors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.destovka-product-geigery-card-color {
+    width: 40px;
+    height: 40px;
+    background:red;
+    border-radius: 50%;
+}
+.destovka-product-geigery-card-input-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.destovka-product-geigery-card-input-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 16px;
+}
+.destovka-product-geigery-card-input-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.destovka-product-geigery-card-input {
+    max-width: 60px;
+    height: 40px;
+    font-size: 16px;
+    text-align: center;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+}
+.destovka-product-geigery-card-total-price {
+    font-size: 18px;
+    font-weight: 600;
+}
+.destovka-product-geigery-card-footer {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+}
 
 

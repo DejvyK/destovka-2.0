@@ -1199,7 +1199,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         ];
         this.init();
     }
- 
+
     async init() {
         try {
             await Promise.all([
@@ -1207,13 +1207,13 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                 this.loadXMLFeed()
             ]);
             this.initializeContainers();
-            this.renderCategories();
+            this.showCategories();
         } catch (error) {
             console.error('Chyba při inicializaci PumpManager:', error);
             this.handleError();
         }
     }
- 
+
     async loadPumpsData() {
         try {
             const response = await fetch('jsony/cerpadla.json');
@@ -1226,9 +1226,8 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             throw error;
         }
     }
- 
+
     initializeContainers() {
-        // Vytvoříme container pro kategorie
         let categoriesContainer = this.container.querySelector('.destovka-categories-container');
         if (!categoriesContainer) {
             categoriesContainer = document.createElement('div');
@@ -1239,9 +1238,8 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             }
         }
         this.categoriesContainer = categoriesContainer;
- 
-        // Vytvoříme container pro produkty
-        let productsContainer = this.container.querySelector('.destovka-products-container');
+
+        let productsContainer = this.container.querySelector('.destovka-products-container:not(.destovka-categories-container)');
         if (!productsContainer) {
             productsContainer = document.createElement('div');
             productsContainer.className = 'destovka-products-container';
@@ -1249,19 +1247,33 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         }
         this.productContainer = productsContainer;
     }
- 
-    renderCategories() {
+
+    showCategories() {
         if (!this.categoriesContainer) return;
- 
+
+        // Vyčistíme oba containery
+        this.categoriesContainer.innerHTML = '';
+        this.productContainer.innerHTML = '';
+
+        // Skryjeme container produktů
+        this.productContainer.style.display = 'none';
+        
+        // Zobrazíme container kategorií
+        this.categoriesContainer.style.display = 'flex';
+
+        // Odstraníme tlačítko pro návrat, pokud existuje
+        const backButton = this.container.querySelector('.destovka-back-to-categories');
+        if (backButton) {
+            backButton.remove();
+        }
+
         const categoryImages = {
             'Ponorné s plovákovým spínačem': 'img/ponor_plovak.png',
             'Ponorné s automatickým spínačem': 'img/ponor_auto.png',
             'Systém pro zalévání a splachování': 'img/system_zalej.png',
             'žádné': 'img/delete.png'
         };
- 
-        this.categoriesContainer.innerHTML = '';
-        
+
         this.categories.forEach(category => {
             const categoryHtml = this.productGenerator.createCategoryItem(
                 category, 
@@ -1269,43 +1281,59 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             );
             this.categoriesContainer.innerHTML += categoryHtml;
         });
- 
+
         this.productGenerator.initializeCategorySelection(
             this.categoriesContainer, 
             (category) => this.handleCategorySelection(category)
         );
     }
- 
+
     handleCategorySelection(category) {
         this.selectedCategory = category;
+        
+        // Skryjeme kategorie
+        this.categoriesContainer.style.display = 'none';
+        
+        // Zobrazíme container produktů
+        this.productContainer.style.display = 'flex';
+
         if (category === 'žádné') {
-            this.productContainer.innerHTML = '';
-            
-            // Přidáme prázdný produkt
-            const emptyProductHtml = this.productGenerator.createEmptyProductItem();
-            this.productContainer.innerHTML = emptyProductHtml;
-            
-            // Inicializujeme event listenery
+            this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
             this.productGenerator.initializeSelection(this.productContainer);
         } else {
             this.updateDisplay();
         }
+
+        // Přidáme tlačítko pro návrat pokud ještě neexistuje
+        if (!this.container.querySelector('.destovka-back-to-categories')) {
+            const backButton = document.createElement('button');
+            backButton.className = 'destovka-back-to-categories';
+            backButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Zpět na výběr kategorií
+            `;
+            backButton.addEventListener('click', () => this.showCategories());
+            this.productContainer.insertAdjacentElement('beforebegin', backButton);
+        }
     }
- 
+
     getProducts() {
         if (!this.selectedCategory) return [];
- 
+    
         return this.pumpsData.filter(pump => 
             pump.Kategorie === this.selectedCategory && 
             pump.Název && 
-            pump.Kód // Kontrolujeme, že má produkt název a kód
+            pump.Kód
         ).map(pump => ({
             'Produkt': pump.Název,
             'Kód': pump.Kód,
-            'Varianta': this.formatPumpSpecs(pump)
+            'Kategorie': pump.Kategorie,  // přidáme kategorii
+            ...pump
         }));
     }
- 
+
     formatPumpSpecs(pump) {
         const specs = [];
         
@@ -1321,17 +1349,17 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         
         return specs.join(' | ');
     }
- 
+
     updateDisplay() {
         if (!this.productContainer) return;
- 
+
         const products = this.getProducts();
         
         if (!products || products.length === 0) {
             this.showNoResults();
             return;
         }
- 
+
         this.productContainer.innerHTML = '';
         
         products.forEach(product => {
@@ -1339,12 +1367,88 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             const productHtml = this.productGenerator.createProductItem(product, feedData);
             this.productContainer.innerHTML += productHtml;
         });
- 
+
         this.productGenerator.initializeSelection(this.productContainer);
     }
- }
 
+    handleError() {
+        if (this.container) {
+            this.container.innerHTML = `
+                <div class="destovka-error-message">
+                    <p>Omlouváme se, ale došlo k chybě při načítání dat čerpadel.</p>
+                    <button onclick="window.destovkaPumpManager = new DestovkaPumpManager()">
+                        Zkusit znovu
+                    </button>
+                </div>`;
+        }
+    }
+}
 
+class DestovkaHladinomeryManager extends DestovkaBaseProductManager {
+    constructor() {
+        super(8);
+        this.hladinomeryData = [];
+        this.init();
+    }
+
+    async init() {
+        try {
+            await Promise.all([
+                this.loadHladinomeryData(),
+                this.loadXMLFeed()
+            ]);
+            this.initProductContainer();
+            this.updateDisplay();
+        } catch (error) {
+            console.error('Chyba při inicializaci HladinomeryManager:', error);
+            this.handleError();
+        }
+    }
+
+    async loadHladinomeryData() {
+        try {
+            const response = await fetch('jsony/hladinoměry.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            this.hladinomeryData = await response.json();
+        } catch (error) {
+            console.error('Chyba při načítání dat hladinoměrů:', error);
+            throw error;
+        }
+    }
+
+    updateDisplay() {
+        if (!this.productContainer) return;
+
+        this.productContainer.innerHTML = '';
+        
+        // Přidáme všechny hladinoměry
+        this.hladinomeryData.forEach(product => {
+            const feedData = this.getFeedDataForProduct(product.Kód);
+            const productHtml = this.productGenerator.createProductItem(product, feedData);
+            this.productContainer.innerHTML += productHtml;
+        });
+
+        // Přidáme prázdný produkt
+        const emptyProductHtml = this.productGenerator.createEmptyProductItem();
+        this.productContainer.innerHTML += emptyProductHtml;
+
+        this.productGenerator.initializeSelection(this.productContainer);
+    }
+
+    handleError() {
+        if (this.container) {
+            this.container.innerHTML = `
+                <div class="destovka-error-message">
+                    <p>Omlouváme se, ale došlo k chybě při načítání dat hladinoměrů.</p>
+                    <button onclick="window.destovkaHladinomeryManager = new DestovkaHladinomeryManager()">
+                        Zkusit znovu
+                    </button>
+                </div>`;
+        }
+    }
+}
 
 // Inicializace manageru při načtení DOMu
 document.addEventListener('DOMContentLoaded', () => {

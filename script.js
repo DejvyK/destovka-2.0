@@ -192,7 +192,8 @@ class DestovkaStepManager {
                 }
             }
         } 
-        else if (this.currentStep === 3 || this.currentStep === 4 || this.currentStep === 5) {
+        else if (this.currentStep === 3 || this.currentStep === 4 || this.currentStep === 5 || 
+            this.currentStep === 6 || this.currentStep === 8) {
             const container = document.getElementById(`destovka-step${this.currentStep}`);
             const productsContainer = container.querySelector('.destovka-products-container');
             
@@ -233,7 +234,11 @@ class DestovkaStepManager {
         }
     
         this.currentStep = newStep;
-        
+        if (newStep === 8 && !window.destovkaHladinomeryManager) {
+            window.destovkaHladinomeryManager = new DestovkaHladinomeryManager();
+        }
+
+
         if (newStep === 5 && !window.destovkaSiphonManager) {
             window.destovkaSiphonManager = new DestovkaSiphonManager();
         }
