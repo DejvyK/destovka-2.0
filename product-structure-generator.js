@@ -96,6 +96,23 @@ class ProductStructureGenerator {
             });
         });
     }
+
+    initializeSelection(container) {
+        if (!container) return;
+        
+        // Odstranit existující event listenery
+        container.querySelectorAll('.destovka-product-select-button').forEach(button => {
+            button.replaceWith(button.cloneNode(true));
+        });
+        
+        // Přidat nové event listenery
+        container.querySelectorAll('.destovka-product-select-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const card = e.target.closest('.destovka-product-card');
+                this.selectProduct(card, container);
+            });
+        });
+    }
     
     selectCategory(selectedCard, container) {
         container.querySelectorAll('.destovka-product-card').forEach(card => {

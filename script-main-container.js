@@ -1254,10 +1254,10 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         if (!this.categoriesContainer) return;
  
         const categoryImages = {
-            'Ponorné s plovákovým spínačem': 'ponor_plovak.png',
-            'Ponorné s automatickým spínačem': 'ponor_auto.png',
-            'Systém pro zalévání a splachování': 'system_zalej.png',
-            'žádné': '/api/placeholder/200/200'
+            'Ponorné s plovákovým spínačem': 'img/ponor_plovak.png',
+            'Ponorné s automatickým spínačem': 'img/ponor_auto.png',
+            'Systém pro zalévání a splachování': 'img/system_zalej.png',
+            'žádné': 'img/delete.png'
         };
  
         this.categoriesContainer.innerHTML = '';
