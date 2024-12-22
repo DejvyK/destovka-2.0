@@ -130,6 +130,46 @@ class ProductStructureGenerator {
             </div>
         `
     }
+
+    createPotrubiProductItem(data, feedData) {
+
+        const createRow = (row) => `
+            <div class="destovka-product-potrubi-card-input-row-container">
+                <div class="destovka-product-potrubi-card-input-row-title">
+                    delka 500 mm
+                </div>
+                <div class="destovka-product-potrubi-card-input-row">
+                    <div>189 Kc vs DPH</div>
+                    <div class="destovka-product-potrubi-card-input-container">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-dash-circle" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                            <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8" />
+                        </svg>
+                        <input type="number" class="destovka-product-potrubi-card-input" placeholder="0" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-plus-circle" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                            <path
+                                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+                        </svg>
+                        ks
+                    </div>
+                </div>
+            </div>
+        `
+
+        return `
+            <div class="destovka-product-potrubi-card-container">
+                <div class="destovka-product-potrubi-card-title">title</div>
+                <img src="obrazek.png" style="max-width: 300px;"/>
+                
+                <div class="destovka-product-potrubi-card-input-column">
+                    //map(() => createRow(...))
+                </div>
+            </div>
+        `
+    }
  
     initializeSelection(container) {
         if (!container) return;
