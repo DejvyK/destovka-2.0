@@ -13,7 +13,7 @@ class ProductStructureGenerator {
                     <img src="${imageUrl}" 
                          alt="${data['Produkt']}"
                          onerror="this.src='img/delete.png'"
-                         style="max-width: 200px"/>
+                         style="max-width: 200px; max-height: 300px"/>
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column;">
                     <div class="destovka-product-title">

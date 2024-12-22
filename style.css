@@ -719,6 +719,8 @@ body {
     color: white;
 }
 .destovka-product-card-footer {
+    margin-top: auto;
+
     display: flex;
     flex-direction: column;
     gap: 12px;
