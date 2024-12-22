@@ -630,9 +630,9 @@ class DestovkaAccessoryManager {
                         <div class="destovka-tank-availability ${availability.className}">
                             ${availability.text}
                         </div>
-                        <div class="destovka-tank-total-price">${this.formatPrice(item.price)}</div>
                     </div>
                     <div class="destovka-accessory-item-actions">
+                        <div class="destovka-tank-total-price">${this.formatPrice(item.price)}</div>
                         <button class="destovka-accessory-select" data-code="${item.Kód}" 
                             ${!availability.isAvailable ? 'disabled' : ''}>
                             ${availability.isAvailable ? 'Vybrat' : 'Nedostupné'}

@@ -89,6 +89,15 @@
         flex-direction: column;
         align-items: center;
     }
+
+    .destovka-accessory-item-main {
+        flex-direction: column;
+    }
+
+    .destovka-accessory-item-actions {
+        border-left: none;
+        padding-left: 0;
+    }
   }
 
 

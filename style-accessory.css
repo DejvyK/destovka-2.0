@@ -150,10 +150,14 @@
 .destovka-accessory-item-actions {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
+
     gap: 8px;
     min-width: 240px;
     border-left: 1px solid var(--destovka-border-color);
     padding-left: 24px;
+
+    align-self: stretch;
 }
 
 .destovka-accessory-select {
