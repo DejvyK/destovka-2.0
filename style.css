@@ -672,11 +672,15 @@ body {
     cursor: not-allowed;
 }
 
-
+.destovka-products-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 24px;
+}
 
 .destovka-product-card {
     width: fit-content;
-
     display: flex;
     flex-direction: column;
     align-items: center;
