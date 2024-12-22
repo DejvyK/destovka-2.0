@@ -3,7 +3,7 @@
 class DestovkaStepManager {
     constructor() {
         this.currentStep = 1;
-        this.maxSteps = 11;
+        this.maxSteps = 12;
 
         if (window.destovkaCart) {
             window.destovkaCart.destClear();
@@ -237,16 +237,19 @@ class DestovkaStepManager {
         if (newStep === 5 && !window.destovkaSiphonManager) {
             window.destovkaSiphonManager = new DestovkaSiphonManager();
         }
-
+    
         if (newStep === 4 && !window.destovkaFiltrationManager) {
             window.destovkaFiltrationManager = new DestovkaFiltrationManager();
         }
-
+    
+        if (newStep === 6 && !window.destovkaPumpManager) {
+            window.destovkaPumpManager = new DestovkaPumpManager();
+        }
+    
         if (newStep === 3 && !window.destovkaAccessoriesManager) {
             window.destovkaAccessoriesManager = new DestovkaAccessoriesManager();
         }
         
-        // Přidáme tuto podmínku
         if (newStep === 2 && window.destovkaTankManager) {
             window.destovkaTankManager.updateTankDisplay(this.formData);
         }

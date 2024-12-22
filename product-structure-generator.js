@@ -54,22 +54,61 @@ class ProductStructureGenerator {
             </div>
         `
     }
+
+    createCategoryItem(category, imageUrl = '/api/placeholder/200/200') {
+        return `
+            <div class="destovka-product-card" data-category="${category}">
+                <div>
+                    <img src="${imageUrl}" 
+                         alt="${category}"
+                         onerror="this.src='/api/placeholder/200/200'"/>
+                </div>
+                <div style="display: flex; align-items:center; flex-direction: column;">
+                    <div class="destovka-product-title">
+                        ${category}
+                    </div>
+                </div>
+                <div class="destovka-product-card-footer">
+                    <button class="destovka-product-select-button">
+                        Vybrat
+                    </button>
+                </div>
+            </div>
+        `;
+    }
  
-    initializeSelection(container) {
+    initializeCategorySelection(container, callback) {
         if (!container) return;
         
-        // Remove any existing event listeners
+        // Odstranit existující event listeners
         container.querySelectorAll('.destovka-product-select-button').forEach(button => {
             button.replaceWith(button.cloneNode(true));
         });
         
-        // Add new event listeners
+        // Přidat nové event listeners
         container.querySelectorAll('.destovka-product-select-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 const card = e.target.closest('.destovka-product-card');
-                this.selectProduct(card, container);
+                this.selectCategory(card, container);
+                if (callback) {
+                    callback(card.dataset.category);
+                }
             });
         });
+    }
+    
+    selectCategory(selectedCard, container) {
+        container.querySelectorAll('.destovka-product-card').forEach(card => {
+            card.classList.remove('destovka-product-selected');
+            const button = card.querySelector('.destovka-product-select-button');
+            button.textContent = 'Vybrat';
+            button.classList.remove('destovka-selected');
+        });
+    
+        selectedCard.classList.add('destovka-product-selected');
+        const button = selectedCard.querySelector('.destovka-product-select-button');
+        button.textContent = 'Vybráno';
+        button.classList.add('destovka-selected');
     }
  
     selectProduct(selectedCard, container) {

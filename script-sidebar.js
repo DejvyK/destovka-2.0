@@ -1,16 +1,17 @@
 // Definujeme kroky
 const sidebarSteps = [
     { id: 1, title: 'Vstupní parametry' },
-    { id: 2, title: 'Výběr produktů' },
-    { id: 3, title: 'Příslušenství' },
+    { id: 2, title: 'Výběr nádrže' },
+    { id: 3, title: 'Nástavce' },
     { id: 4, title: 'Filtrace' },
-    { id: 5, title: 'Čerpadla' },
-    { id: 6, title: 'Přepady' },
-    { id: 7, title: 'Poklopy' },
-    { id: 8, title: 'Šachty' },
-    { id: 9, title: 'Doprava' },
-    { id: 10, title: 'Souhrn' },
-    { id: 11, title: 'Dokončení' }
+    { id: 5, title: 'Bezpečnostní přepad' },
+    { id: 6, title: 'Čerpadla' },
+    { id: 7, title: 'Příslušenství k čerpadlu' },
+    { id: 8, title: 'Hladinoměry' },
+    { id: 9, title: 'Geigery' },
+    { id: 10, title: 'Potrubí' },
+    { id: 11, title: 'Vsakovací objekt' },
+    { id: 12, title: 'Seznam položek' }
 ];
 
 // Aktuální krok

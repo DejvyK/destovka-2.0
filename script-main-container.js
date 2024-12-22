@@ -1186,6 +1186,164 @@ class DestovkaSiphonManager extends DestovkaBaseProductManager {
 }
 
 
+class DestovkaPumpManager extends DestovkaBaseProductManager {
+    constructor() {
+        super(6); // krok 6
+        this.selectedCategory = null;
+        this.pumpsData = [];
+        this.categories = [
+            'Ponorné s plovákovým spínačem',
+            'Ponorné s automatickým spínačem', 
+            'Systém pro zalévání a splachování',
+            'žádné'
+        ];
+        this.init();
+    }
+ 
+    async init() {
+        try {
+            await Promise.all([
+                this.loadPumpsData(),
+                this.loadXMLFeed()
+            ]);
+            this.initializeContainers();
+            this.renderCategories();
+        } catch (error) {
+            console.error('Chyba při inicializaci PumpManager:', error);
+            this.handleError();
+        }
+    }
+ 
+    async loadPumpsData() {
+        try {
+            const response = await fetch('jsony/cerpadla.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            this.pumpsData = await response.json();
+        } catch (error) {
+            console.error('Chyba při načítání dat čerpadel:', error);
+            throw error;
+        }
+    }
+ 
+    initializeContainers() {
+        // Vytvoříme container pro kategorie
+        let categoriesContainer = this.container.querySelector('.destovka-categories-container');
+        if (!categoriesContainer) {
+            categoriesContainer = document.createElement('div');
+            categoriesContainer.className = 'destovka-categories-container destovka-products-container';
+            const heading = this.container.querySelector('h1');
+            if (heading) {
+                heading.insertAdjacentElement('afterend', categoriesContainer);
+            }
+        }
+        this.categoriesContainer = categoriesContainer;
+ 
+        // Vytvoříme container pro produkty
+        let productsContainer = this.container.querySelector('.destovka-products-container');
+        if (!productsContainer) {
+            productsContainer = document.createElement('div');
+            productsContainer.className = 'destovka-products-container';
+            this.categoriesContainer.insertAdjacentElement('afterend', productsContainer);
+        }
+        this.productContainer = productsContainer;
+    }
+ 
+    renderCategories() {
+        if (!this.categoriesContainer) return;
+ 
+        const categoryImages = {
+            'Ponorné s plovákovým spínačem': 'ponor_plovak.png',
+            'Ponorné s automatickým spínačem': 'ponor_auto.png',
+            'Systém pro zalévání a splachování': 'system_zalej.png',
+            'žádné': '/api/placeholder/200/200'
+        };
+ 
+        this.categoriesContainer.innerHTML = '';
+        
+        this.categories.forEach(category => {
+            const categoryHtml = this.productGenerator.createCategoryItem(
+                category, 
+                categoryImages[category]
+            );
+            this.categoriesContainer.innerHTML += categoryHtml;
+        });
+ 
+        this.productGenerator.initializeCategorySelection(
+            this.categoriesContainer, 
+            (category) => this.handleCategorySelection(category)
+        );
+    }
+ 
+    handleCategorySelection(category) {
+        this.selectedCategory = category;
+        if (category === 'žádné') {
+            this.productContainer.innerHTML = '';
+            
+            // Přidáme prázdný produkt
+            const emptyProductHtml = this.productGenerator.createEmptyProductItem();
+            this.productContainer.innerHTML = emptyProductHtml;
+            
+            // Inicializujeme event listenery
+            this.productGenerator.initializeSelection(this.productContainer);
+        } else {
+            this.updateDisplay();
+        }
+    }
+ 
+    getProducts() {
+        if (!this.selectedCategory) return [];
+ 
+        return this.pumpsData.filter(pump => 
+            pump.Kategorie === this.selectedCategory && 
+            pump.Název && 
+            pump.Kód // Kontrolujeme, že má produkt název a kód
+        ).map(pump => ({
+            'Produkt': pump.Název,
+            'Kód': pump.Kód,
+            'Varianta': this.formatPumpSpecs(pump)
+        }));
+    }
+ 
+    formatPumpSpecs(pump) {
+        const specs = [];
+        
+        if (pump['Max. průtok (l/hod)']) {
+            specs.push(`Max. průtok: ${pump['Max. průtok (l/hod)']} l/hod`);
+        }
+        if (pump['Max. výtlak (m)']) {
+            specs.push(`Max. výtlak: ${pump['Max. výtlak (m)']} m`);
+        }
+        if (pump['Výkon (W)']) {
+            specs.push(`Výkon: ${pump['Výkon (W)']} W`);
+        }
+        
+        return specs.join(' | ');
+    }
+ 
+    updateDisplay() {
+        if (!this.productContainer) return;
+ 
+        const products = this.getProducts();
+        
+        if (!products || products.length === 0) {
+            this.showNoResults();
+            return;
+        }
+ 
+        this.productContainer.innerHTML = '';
+        
+        products.forEach(product => {
+            const feedData = this.getFeedDataForProduct(product.Kód);
+            const productHtml = this.productGenerator.createProductItem(product, feedData);
+            this.productContainer.innerHTML += productHtml;
+        });
+ 
+        this.productGenerator.initializeSelection(this.productContainer);
+    }
+ }
+
 
 
 // Inicializace manageru při načtení DOMu
