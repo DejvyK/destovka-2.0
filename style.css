@@ -907,3 +907,67 @@ body {
 }
 
 
+
+.destovka-cart-card-container {
+    width: 100%;
+    color: var(--destovka-text-color);
+    display: flex;        
+    gap: 8px;
+    padding: 16px;
+    border: 2px solid var(--destovka-border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1); 
+}
+
+.destovka-cart-card-info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.destovka-cart-card-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.destovka-cart-card-pieces {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: auto;
+}
+
+.destovka-cart-card-price-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.destovka-cart-card-price {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.destovka-cart-card-remove-button {
+    margin-top: auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    background: none;
+    color: red;
+    
+    border: 1px solid red;
+    border-radius: 6px;     
+
+    padding: 12px 24px; 
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.destovka-cart-card-remove-button:hover {
+    background: red;
+    color: white;
+}
