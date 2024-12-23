@@ -112,6 +112,10 @@
     .destovka-cart-card-remove-button {
         margin-top: 18px;
     }
+
+    .destovka-potrubi-columns-container {
+        flex-direction: column;
+    }
   }
 
 
