@@ -831,6 +831,37 @@ body {
     gap: 8px;
 }
 
+.destovka-product-potrubi-total-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 24px 0;
+}
+
+.destovka-product-potrubi-total {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+}
+
+.destovka-product-potrubi-total-price {
+    color: var(--destovka-success);
+}
+
+
+.destovka-potrubi-columns-container {
+    width: 100%;
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+}
+
+.destovka-product-potrubi-total-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 24px 0;
+}
 
 
 

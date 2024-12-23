@@ -35,7 +35,8 @@ class DestovkaStepManager {
             load: { required: true },
             inflowDiameter: { required: true },
             outflowDiameter: { required: true },
-            inflowDepth: { required: true, min: 0, max: 1000 }
+            inflowDepth: { required: true, min: 0, max: 1000 },
+            distance: { required: true, min: 0 }
         };
     }
 
@@ -121,6 +122,7 @@ class DestovkaStepManager {
             this.formData.set('inflowDiameter', document.getElementById('inflowDiameter')?.value);
             this.formData.set('outflowDiameter', document.getElementById('outflowDiameter')?.value);
             this.formData.set('inflowDepth', document.getElementById('inflowDepth')?.value);
+            this.formData.set('distance', document.getElementById('distance')?.value);
     
             // Přidáme console.log pro debugging
             console.log('Form data saved:', Object.fromEntries(this.formData.entries()));
@@ -167,11 +169,11 @@ class DestovkaStepManager {
                 alert('Prosím vyberte nádrž před pokračováním.');
                 return;
             }
-     
+         
             const tankData = window.destovkaTankManager?.tanksData.find(
                 tank => tank['Kód'] === selectedTank.productCode
             );
-     
+         
             if (tankData) {
                 try {
                     if (!window.destovkaAccessoryFilter) {
@@ -192,6 +194,26 @@ class DestovkaStepManager {
                 }
             }
         } 
+        else if (this.currentStep === 9) {  // Geigery
+            const selectedGeigers = window.destovkaGeigeryManager?.getSelectedGeigers() || [];
+            if (selectedGeigers.length > 0) {
+                selectedGeigers.forEach(geiger => {
+                    window.destovkaCart.destAddItem(9, geiger.code, geiger.quantity, {
+                        type: geiger.type
+                    });
+                });
+            }
+        }
+        else if (this.currentStep === 10) { // Potrubí
+            const selectedProducts = window.destovkaPotrubíManager?.getSelectedProducts() || [];
+            if (selectedProducts.length > 0) {
+                selectedProducts.forEach(product => {
+                    window.destovkaCart.destAddItem(10, product.code, product.quantity, {
+                        type: 'potrubí'
+                    });
+                });
+            }
+        }
         else if (this.currentStep === 3 || this.currentStep === 4 || this.currentStep === 5 || 
             this.currentStep === 6 || this.currentStep === 8) {
             const container = document.getElementById(`destovka-step${this.currentStep}`);
@@ -233,6 +255,14 @@ class DestovkaStepManager {
             newContent.classList.add('destovka-active');
         }
     
+        if (newStep === 10 && !window.destovkaPotrubíManager) {
+            window.destovkaPotrubíManager = new DestovkaPotrubíManager();
+        }
+
+        if (newStep === 9 && !window.destovkaGeigeryManager) {
+            window.destovkaGeigeryManager = new DestovkaGeigeryManager();
+        }
+
         this.currentStep = newStep;
         if (newStep === 8 && !window.destovkaHladinomeryManager) {
             window.destovkaHladinomeryManager = new DestovkaHladinomeryManager();
@@ -411,15 +441,15 @@ class TooltipHandler {
 class DestovkaCart {
     constructor() {
         this.destItems = new Map(); // Přejmenováno na destItems
-        this.destStepLimits = {     // Přejmenováno na destStepLimits
-            2: { maxItems: 1, type: 'tank' },
+        this.destStepLimits = {
+            2: { maxItems: 2, type: 'tank' },
             3: { maxItems: null, type: 'accessory' },
             4: { maxItems: null, type: 'accessory' },
             5: { maxItems: null, type: 'pump' },
             6: { maxItems: null, type: 'component' },
             7: { maxItems: null, type: 'component' },
             8: { maxItems: null, type: 'component' },
-            9: { maxItems: 1, type: 'delivery' }
+            9: { maxItems: null, type: 'geiger' }  
         };
         
         this.destLoadFromStorage();

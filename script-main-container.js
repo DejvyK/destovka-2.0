@@ -1450,6 +1450,305 @@ class DestovkaHladinomeryManager extends DestovkaBaseProductManager {
     }
 }
 
+class DestovkaGeigeryManager extends DestovkaBaseProductManager {
+    constructor() {
+        super(9); // Step 9 pro geigery
+        this.geigerData = [];
+        this.init();
+    }
+
+    async init() {
+        try {
+            await Promise.all([
+                this.loadGeigerData(),
+                this.loadXMLFeed()
+            ]);
+            this.initProductContainer();
+            this.updateDisplay();
+        } catch (error) {
+            console.error('Chyba při inicializaci GeigeryManager:', error);
+            this.handleError();
+        }
+    }
+
+    async loadGeigerData() {
+        try {
+            const response = await fetch('jsony/gajgry.json');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            this.geigerData = await response.json();
+        } catch (error) {
+            console.error('Chyba při načítání dat geigerů:', error);
+            throw error;
+        }
+    }
+
+    updateDisplay() {
+        if (!this.productContainer) return;
+        this.productContainer.innerHTML = '';
+        
+        const geigerTypes = ['Spodní výtok', 'Boční výtok'];
+        const typeToImageCode = {
+            'Spodní výtok': '01.013.001.B',
+            'Boční výtok': '01.013.002.B'
+        };
+
+        geigerTypes.forEach(type => {
+            const geigersOfType = this.geigerData.filter(g => g.Typ === type);
+            const imageCode = typeToImageCode[type];
+            const feedData = this.getFeedDataForProduct(imageCode);
+            
+            const geigerDisplayData = {
+                title: `Geiger - ${type}`,
+                type: type,
+                imageUrl: feedData.imageLink,
+                variants: geigersOfType.map(g => ({
+                    code: g.Kód,
+                    color: g.Barva,
+                    feedData: this.getFeedDataForProduct(g.Kód)
+                }))
+            };
+
+            const productElement = this.productGenerator.createGeigeryProductItem(geigerDisplayData);
+            this.productContainer.appendChild(productElement);
+        });
+    }
+
+    getFeedDataForProduct(code) {
+        return this.feedData.get(code) || {
+            price: 'Cena na dotaz',
+            availability: 'out of stock',
+            imageLink: '/api/placeholder/200/200',
+            link: '#'
+        };
+    }
+
+    handleError() {
+        if (this.container) {
+            this.container.innerHTML = `
+                <div class="destovka-error-message">
+                    <p>Omlouváme se, ale došlo k chybě při načítání dat geigerů.</p>
+                    <button onclick="window.destovkaGeigeryManager = new DestovkaGeigeryManager()">
+                        Zkusit znovu
+                    </button>
+                </div>`;
+        }
+    }
+
+    getSelectedGeigers() {
+        const selectedGeigers = [];
+        const inputs = this.container.querySelectorAll('.destovka-product-geigery-card-input');
+        
+        inputs.forEach(input => {
+            const quantity = parseInt(input.value || 0);
+            if (quantity > 0) {
+                const container = input.closest('.destovka-product-geigery-card-container');
+                const type = container.dataset.type;
+                
+                selectedGeigers.push({
+                    code: input.dataset.code,
+                    quantity: quantity,
+                    type: type
+                });
+            }
+        });
+
+        return selectedGeigers;
+    }
+}
+
+class DestovkaPotrubíManager extends DestovkaBaseProductManager {
+    constructor() {
+        super(10);
+        this.potrubíData = [];
+        console.log('PotrubíManager initialized');  // Debug log
+        this.init();
+    }
+
+    async init() {
+        try {
+            await Promise.all([
+                this.loadPotrubíData(),
+                this.loadXMLFeed()
+            ]);
+            this.initProductContainer();
+            this.updateDisplay();
+        } catch (error) {
+            console.error('Chyba při inicializaci PotrubíManager:', error);
+            this.handleError();
+        }
+    }
+
+    async loadPotrubíData() {
+        try {
+            const response = await fetch('jsony/potrubi.json');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            console.log('Loaded potrubi data:', data);  // Debug log
+            this.potrubíData = data;
+        } catch (error) {
+            console.error('Chyba při načítání dat potrubí:', error);
+            throw error;
+        }
+    }
+
+    updateDisplay() {
+        if (!this.productContainer) {
+            console.error('Product container not found');
+            return;
+        }
+        this.productContainer.innerHTML = '';
+    
+        // Získáme DN z form dat
+        const inflowDiameter = window.destovkaStepManager?.formData.get('inflowDiameter');
+        console.log('inflowDiameter:', inflowDiameter);  // Debug log
+    
+        const dnSystem = `DN${inflowDiameter}`;
+        console.log('dnSystem:', dnSystem);  // Debug log
+    
+        // Filtrujeme data podle DN
+        const filteredData = this.potrubíData.filter(item => item.Systém === dnSystem);
+        console.log('Filtered Data:', filteredData);  // Debug log
+        console.log('All Data:', this.potrubíData);  // Debug log pro všechna data
+    
+        const categories = ['Trubky', 'Kolena', 'Odbočky', 'Ostatní'];
+        
+        let columnsHTML = '';
+        categories.forEach(category => {
+            console.log('Processing category:', category);  // Debug log
+            const categoryItems = filteredData.filter(item => item.Sloupec === category);
+            console.log('Category items:', categoryItems);  // Debug log
+    
+            if (categoryItems.length > 0) {
+                const categoryData = {
+                    title: category,
+                    items: categoryItems,
+                    feedData: this.feedData,
+                    systemTitle: `systém pro ${dnSystem}`
+                };
+    
+                columnsHTML += this.productGenerator.createPotrubiProductItem(categoryData);
+            }
+        });
+    
+        this.productContainer.innerHTML = `
+    <div class="destovka-potrubi-columns-container">
+        ${columnsHTML}
+    </div>
+    <div class="destovka-product-potrubi-total-container">
+        <div class="destovka-product-potrubi-total">
+            Celková cena: <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
+        </div>
+    </div>
+`;
+    
+        this.initializeInputHandlers();
+    }
+
+    groupPotrubíByColumns(data) {
+        return data.reduce((acc, item) => {
+            const column = item.Sloupec;
+            if (!acc[column]) {
+                acc[column] = [];
+            }
+            acc[column].push(item);
+            return acc;
+        }, {});
+    }
+
+    initializeInputHandlers() {
+        const container = this.productContainer;
+        if (!container) return;
+    
+        container.querySelectorAll('.destovka-product-potrubi-card-input-container').forEach(inputContainer => {
+            const input = inputContainer.querySelector('input');
+            const decreaseBtn = inputContainer.querySelector('.destovka-decrease-quantity');
+            const increaseBtn = inputContainer.querySelector('.destovka-increase-quantity');
+    
+            if (decreaseBtn && increaseBtn && input) {
+                decreaseBtn.style.cursor = 'pointer';
+                increaseBtn.style.cursor = 'pointer';
+    
+                decreaseBtn.addEventListener('click', () => {
+                    const currentValue = parseInt(input.value) || 0;
+                    if (currentValue > 0) {
+                        input.value = currentValue - 1;
+                        this.updateTotalPrice();
+                    }
+                });
+    
+                increaseBtn.addEventListener('click', () => {
+                    const currentValue = parseInt(input.value) || 0;
+                    input.value = currentValue + 1;
+                    this.updateTotalPrice();
+                });
+    
+                input.addEventListener('change', () => {
+                    let value = parseInt(input.value) || 0;
+                    if (value < 0) value = 0;
+                    input.value = value;
+                    this.updateTotalPrice();
+                });
+            }
+        });
+    }
+
+    updateTotalPrice() {
+        const container = this.productContainer;
+        if (!container) return;
+    
+        let totalPrice = 0;
+        container.querySelectorAll('.destovka-product-potrubi-card-input').forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            const code = input.dataset.code;
+            const feedData = this.feedData.get(code);
+            const price = this.extractPrice(feedData?.price || '0');
+            totalPrice += quantity * price;
+        });
+    
+        // Aktualizace celkové ceny
+        const totalPriceElement = container.querySelector('.destovka-product-potrubi-total-price');
+        if (totalPriceElement) {
+            totalPriceElement.textContent = `${totalPrice.toLocaleString('cs-CZ')} Kč vč. DPH`;
+        }
+    }
+
+    extractPrice(priceString) {
+        if (!priceString) return 0;
+        return parseInt(priceString.replace(/[^0-9]/g, ''));
+    }
+
+    getSelectedPotrubí() {
+        const selectedItems = [];
+        const inputs = this.container.querySelectorAll('.destovka-product-potrubi-card-input');
+        
+        inputs.forEach(input => {
+            const quantity = parseInt(input.value || 0);
+            if (quantity > 0) {
+                selectedItems.push({
+                    code: input.dataset.code,
+                    quantity: quantity
+                });
+            }
+        });
+
+        return selectedItems;
+    }
+
+    getSelectedProducts() {
+        const selectedProducts = [];
+        this.productContainer.querySelectorAll('.destovka-product-potrubi-card-input').forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            if (quantity > 0) {
+                selectedProducts.push({
+                    code: input.dataset.code,
+                    quantity: quantity
+                });
+            }
+        });
+        return selectedProducts;
+    }
+}
+
 // Inicializace manageru při načtení DOMu
 document.addEventListener('DOMContentLoaded', () => {
     window.destovkaTankManager = new DestovkaTankManager();

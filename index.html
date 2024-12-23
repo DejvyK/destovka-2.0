@@ -226,6 +226,31 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="destovka-form-group">
+                            <div class="destovka-input-wrapper">
+                                <div class="destovka-label-wrapper">
+                                    <label class="destovka-label">9. Vzdálenost od domu</label>
+                                    <div class="destovka-tooltip">?
+                                        <div class="destovka-tooltip-content">
+                                            <img src="/api/placeholder/280/160" alt="Vzdálenost od domu" class="destovka-tooltip-img">
+                                            <p>Zadejte vzdálenost od domu v metrech. Tato hodnota je důležitá pro výpočet délky potřebného potrubí.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="destovka-input-row">
+                                    <input  type="number" 
+                                            class="destovka-input" 
+                                            id="distance" 
+                                            min="0" 
+                                            max="1000"
+                                            onkeydown="return event.keyCode !== 69 && event.keyCode !== 187" 
+                                            oninput="this.value = this.value.replace(/[eE\+\-]/g, '')">
+                                            
+                                    <button class="destovka-unit-button" data-current-unit="m">m</button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </section>
                 <section class="destovka-button-group-container">
@@ -439,7 +464,7 @@
 
 
     </div>
-    
+
     <script src="script-sidebar.js"></script>
     <script src="product-structure-generator.js"></script>
     <script src="script-main-container.js"></script>
