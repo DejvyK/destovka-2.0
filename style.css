@@ -826,7 +826,16 @@ body {
     text-align: center;
     border: 1px solid var(--destovka-border-color);
     border-radius: 6px;
+
+    -moz-appearance: textfield;
 }
+
+.destovka-product-potrubi-card-input::-webkit-outer-spin-button,
+.destovka-product-potrubi-card-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .destovka-product-potrubi-card-input-container{
     display: flex;
     align-items: center;
@@ -923,6 +932,14 @@ body {
     text-align: center;
     border: 1px solid var(--destovka-border-color);
     border-radius: 6px;
+    -moz-appearance: textfield;
+}
+
+.destovka-product-geigery-card-input::-webkit-outer-spin-button,
+.destovka-product-geigery-card-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+
 }
 .destovka-product-geigery-card-total-price {
     font-size: 18px;
