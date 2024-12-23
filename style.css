@@ -971,3 +971,30 @@ body {
     background: red;
     color: white;
 }
+
+.destovka-cart-total-wrapper {
+    width: fit-content;
+
+    display: flex;
+    flex-direction: column;    
+    align-items: flex-end;
+
+    gap: 16px;
+}
+
+.destovka-cart-total-wrapper > *:not(:last-child) {
+    width: 100%;
+    border-bottom: 1px solid var(--destovka-border-color);
+    padding-bottom: 16px;
+    text-align: end;
+}
+
+.destovka-cart-total-price {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.destovka-cart-total-price-without-vat {
+    font-size: 16px;    
+    font-weight: 500;
+}

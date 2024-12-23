@@ -45,9 +45,13 @@ class CartStructureGenerator {
         `
     }
 
-    createCartTotalItem(cartItems) {
+    createCartTotalItem() {
         return `
-            
+            <div class="destovka-cart-total-wrapper">
+                <div>celkem 1234 kusu</div>
+                <div>celkem <span class="destovka-cart-total-price-without-vat">1234 Kč</span> bez DPH</div>
+                <div style="font-size: 20px">celkem <span class="destovka-cart-total-price">1234 Kč</span> vč DPH</div>            
+            </div>
         `
     }
 }
