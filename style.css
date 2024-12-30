@@ -681,6 +681,7 @@ body {
 }
 
 .destovka-products-container {
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
@@ -1074,6 +1075,7 @@ body {
 
 
 .destovka-height-info {
+    width: 100%;
     display: flex;
     gap: 24px;
     padding: 16px;
@@ -1311,4 +1313,34 @@ body {
 .destovka-vsak-info-row strong {
     color: var(--destovka-success);
     font-size: 18px;
+}
+
+.destovka-product-note {
+    margin-top: 12px;
+}
+
+.destovka-quantity-counter {
+    display: flex;
+    gap: 4px;
+}
+
+.destovka-quantity-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.destovka-quantity-increase,
+.destovka-quantity-decrease {
+    flex: 1;
+    height: 100%;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    background: white;
 }

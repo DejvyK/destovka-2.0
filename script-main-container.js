@@ -1268,15 +1268,17 @@ class DestovkaAccessoriesManager {
                 extensionsHtml += `
                     <div class="destovka-product-item">
                         ${this.productGenerator.createProductItem(productData, feedData)}
-                        ${cutNote ? `<div class="destovka-product-note">${cutNote}</div>` : ''}
+                        ${cutNote ? `<div class="destovka-product-note destovka-label">${cutNote}</div>` : ''}
                         <div class="destovka-quantity-counter">
-                            <button class="destovka-quantity-decrease">-</button>
                             <input type="number" 
-                                   class="destovka-quantity-input" 
+                                   class="destovka-input destovka-quantity-input" 
                                    value="1" 
                                    min="0" 
                                    data-code="${extension.code}">
-                            <button class="destovka-quantity-increase">+</button>
+                            <div class="destovka-quantity-controls">
+                                <button class="destovka-quantity-increase">+</button>
+                                <button class="destovka-quantity-decrease">-</button>
+                            </div>
                         </div>
                     </div>
                 `;
