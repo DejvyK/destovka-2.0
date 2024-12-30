@@ -1349,3 +1349,17 @@ body {
     border-radius: 6px;
     background: white;
 }
+
+.destovka-cart-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--destovka-border-color);
+}
+
+.destovka-cart-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+}

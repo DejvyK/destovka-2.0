@@ -445,6 +445,10 @@ class DestovkaStepManager {
             newContent.classList.add('destovka-active');
         }
 
+        if (newStep === 12 && !window.destovkaCartDisplay) {
+            window.destovkaCartDisplay = new DestovkaCartDisplayManager();
+        }
+
         if (newStep === 11 && !window.destovkaVsakovaciManager) {
             window.destovkaVsakovaciManager = new DestovkaVsakovaciManager();
         }
@@ -643,15 +647,15 @@ class DestovkaCart {
         this.destItems = new Map(); // Přejmenováno na destItems
         this.destStepLimits = {
             2: { maxItems: 2, type: 'tank' },
-            3: { maxItems: null, type: 'accessory' },
-            4: { maxItems: null, type: 'accessory' },
-            5: { maxItems: null, type: 'pump' },
-            6: { maxItems: null, type: 'component' },
-            7: { maxItems: null, type: 'component' },
-            8: { maxItems: null, type: 'component' },
-            9: { maxItems: null, type: 'geiger' },  
-            10: { maxItems: null, type: 'potrubi' },  
-            11: { maxItems: null, type: 'vsakovaci' },  
+            3: { maxItems: null, type: 'nastavec' },
+            4: { maxItems: null, type: 'filtrace' },
+            5: { maxItems: null, type: 'sifon' },
+            6: { maxItems: null, type: 'pump' },  // opraveno na pump
+            7: { maxItems: null, type: 'pump-accessory' },  // příslušenství k čerpadlům
+            8: { maxItems: null, type: 'hladinomer' },
+            9: { maxItems: null, type: 'geiger' },
+            10: { maxItems: null, type: 'potrubi' },
+            11: { maxItems: null, type: 'vsakovaci' }
         };
         
         this.destLoadFromStorage();

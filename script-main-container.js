@@ -2002,14 +2002,28 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         
         // Zobrazíme container produktů
         this.productContainer.style.display = 'flex';
-
+    
         if (category === 'žádné') {
+            // Odstraníme existující produkty z košíku
+            const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
+            currentItems.forEach(item => {
+                window.destovkaCart.destRemoveItem(item.productCode);
+            });
+            
             this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
-            this.productGenerator.initializeSelection(this.productContainer);
+            const emptyCard = this.productContainer.querySelector('.destovka-product-card');
+            if (emptyCard) {
+                emptyCard.classList.add('destovka-product-selected');
+                const button = emptyCard.querySelector('.destovka-product-select-button');
+                if (button) {
+                    button.textContent = 'Vybráno';
+                    button.classList.add('destovka-selected');
+                }
+            }
         } else {
             this.updateDisplay();
         }
-
+    
         // Přidáme tlačítko pro návrat pokud ještě neexistuje
         if (!this.container.querySelector('.destovka-back-to-categories')) {
             const backButton = document.createElement('button');
@@ -2071,23 +2085,127 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
 
     updateDisplay() {
         if (!this.productContainer) return;
-
+    
         const products = this.getProducts();
         
         if (!products || products.length === 0) {
             this.showNoResults();
             return;
         }
-
+    
+        // Vyčistit container
         this.productContainer.innerHTML = '';
         
+        // Získat aktuálně vybraný produkt z košíku
+        const selectedPump = window.destovkaCart?.destGetItemsByStep(6)[0];
+    
+        // Vytvořit produktové karty
         products.forEach(product => {
+            const productDiv = document.createElement('div');
+            productDiv.className = 'destovka-product-card';
+            productDiv.dataset.productCode = product.Kód;
+            
             const feedData = this.getFeedDataForProduct(product.Kód);
-            const productHtml = this.productGenerator.createProductItem(product, feedData);
-            this.productContainer.innerHTML += productHtml;
+            
+            // Základní obsah karty
+            productDiv.innerHTML = `
+                <div>
+                    <img src="${feedData.imageLink}" 
+                         alt="${product.Produkt}"
+                         onerror="this.src='img/delete.png'"
+                         style="max-width: 200px" />
+                </div>
+                <div style="display: flex; align-items:center; flex-direction: column;">
+                    <div class="destovka-product-title">
+                        ${product.Produkt}
+                    </div>
+                    <div class="destovka-product-code">kód ${product.Kód}</div>
+                </div>
+                <div class="destovka-product-card-footer">
+                    <div class="destovka-product-price">
+                        ${this.productGenerator.formatPrice(feedData.price)}
+                    </div>
+                    <button class="destovka-product-select-button">
+                        ${selectedPump?.productCode === product.Kód ? 'Vybráno' : 'Vybrat'}
+                    </button>
+                    ${this.formatPumpSpecs(product)}
+                </div>
+            `;
+    
+            // Přidat třídy pro vybraný produkt
+            if (selectedPump?.productCode === product.Kód) {
+                productDiv.classList.add('destovka-product-selected');
+                const button = productDiv.querySelector('.destovka-product-select-button');
+                if (button) button.classList.add('destovka-selected');
+            }
+    
+            // Přidat event listener pro výběr
+            const selectButton = productDiv.querySelector('.destovka-product-select-button');
+            if (selectButton) {
+                selectButton.addEventListener('click', () => {
+                    // Odstranit všechny předchozí produkty z kroku 6
+                    const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
+                    currentItems.forEach(item => {
+                        window.destovkaCart.destRemoveItem(item.productCode);
+                    });
+    
+                    // Odstranit výběr ze všech karet
+                    this.productContainer.querySelectorAll('.destovka-product-card').forEach(card => {
+                        card.classList.remove('destovka-product-selected');
+                        const btn = card.querySelector('.destovka-product-select-button');
+                        if (btn) {
+                            btn.textContent = 'Vybrat';
+                            btn.classList.remove('destovka-selected');
+                        }
+                    });
+    
+                    // Přidat nový produkt a označit ho
+                    this.addToCart(product.Kód);
+                    productDiv.classList.add('destovka-product-selected');
+                    selectButton.textContent = 'Vybráno';
+                    selectButton.classList.add('destovka-selected');
+                });
+            }
+    
+            this.productContainer.appendChild(productDiv);
         });
+    }
 
-        this.productGenerator.initializeSelection(this.productContainer);
+    initializeProductSelection() {
+        const productCards = this.productContainer.querySelectorAll('.destovka-product-card');
+        
+        productCards.forEach(card => {
+            const selectButton = card.querySelector('.destovka-product-select-button');
+            if (!selectButton || selectButton.hasListener) return;
+    
+            selectButton.hasListener = true; // označíme, že jsme přidali listener
+            selectButton.addEventListener('click', () => {
+                const productCode = card.dataset.productCode;
+                if (!productCode) return;
+    
+                // Odstranit všechny předchozí produkty z kroku 6
+                const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
+                currentItems.forEach(item => {
+                    window.destovkaCart.destRemoveItem(item.productCode);
+                });
+    
+                // Odstranit výběr ze všech karet
+                productCards.forEach(otherCard => {
+                    otherCard.classList.remove('destovka-product-selected');
+                    const otherButton = otherCard.querySelector('.destovka-product-select-button');
+                    if (otherButton) {
+                        otherButton.textContent = 'Vybrat';
+                        otherButton.classList.remove('destovka-selected');
+                    }
+                });
+    
+                // Přidat nový produkt a označit ho
+                this.addToCart(productCode);
+                card.classList.add('destovka-product-selected');
+                selectButton.textContent = 'Vybráno';
+                selectButton.classList.add('destovka-selected');
+            });
+        });
     }
 
     // Metoda pro přidání do košíku s ID příslušenství
@@ -2096,9 +2214,9 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         if (!product) return;
     
         const accessories = [];
-        if (product.PříslušenstvíID1) accessories.push(product.PříslušenstvíID1);
-        if (product.PříslušenstvíID2) accessories.push(product.PříslušenstvíID2);
-        if (product.PříslušenstvíID3) accessories.push(product.PříslušenstvíID3);
+        if (product.PříslušenstvíID1) accessories.push(product.PříslušenstvíID1.toString());
+        if (product.PříslušenstvíID2) accessories.push(product.PříslušenstvíID2.toString());
+        if (product.PříslušenstvíID3) accessories.push(product.PříslušenstvíID3.toString());
     
         window.destovkaCart.destAddItem(6, productCode, 1, {
             type: 'pump',
@@ -2156,46 +2274,40 @@ class DestovkaPumpAccessoryManager extends DestovkaBaseProductManager {
     }
 
     getCompatibleAccessories() {
-        console.group('Debugging příslušenství čerpadel');
-        
-        // 1. Kontrola vybraného čerpadla
         const selectedPump = window.destovkaCart?.destGetItemsByStep(6)[0];
+        
+        console.group('Debugging příslušenství čerpadel');
         console.log('Vybrané čerpadlo:', selectedPump);
-
-        if (!selectedPump) {
-            console.warn('Žádné čerpadlo není vybráno');
+        
+        if (!selectedPump || !selectedPump.accessories) {  // změna z metadata.accessories na accessories
+            console.warn('Žádné čerpadlo nebo chybějící accessories');
             console.groupEnd();
             return [];
         }
-
-        // 2. Kontrola metadat a accessories
-        console.log('Metadata čerpadla:', selectedPump.metadata);
-        console.log('ID příslušenství:', selectedPump.metadata?.accessories);
-
-        if (!selectedPump.metadata?.accessories?.length) {
-            console.warn('Čerpadlo nemá žádné ID příslušenství');
-            console.groupEnd();
-            return [];
-        }
-
-        // 3. Kontrola načtených dat příslušenství
+    
         console.log('Načtená data příslušenství:', this.accessoryData);
-
-        // 4. Filtrování příslušenství
+        console.log('ID k hledání:', selectedPump.accessories);
+    
+        // Konvertujeme ID na stringy pro porovnání
+        const accessoryIds = selectedPump.accessories.map(id => id.toString());
+        
         const compatibleAccessories = this.accessoryData.filter(accessory => {
-            const isCompatible = selectedPump.metadata.accessories.includes(accessory['Číslo ID']);
-            console.log(
-                `Kontrola příslušenství: ${accessory.Název}`,
-                `ID: ${accessory['Číslo ID']}`,
-                `Je kompatibilní: ${isCompatible}`
-            );
+            const isCompatible = accessoryIds.includes(accessory['Číslo ID'].toString());
+            console.log(`Kontrola příslušenství ${accessory.Název}:`, {
+                'ID příslušenství': accessory['Číslo ID'],
+                'Hledaná ID': accessoryIds,
+                'Je kompatibilní': isCompatible
+            });
             return isCompatible;
         });
-
-        console.log('Nalezené kompatibilní příslušenství:', compatibleAccessories);
+    
+        console.log('Nalezené příslušenství:', compatibleAccessories);
         console.groupEnd();
-
-        return compatibleAccessories;
+    
+        return compatibleAccessories.map(accessory => ({
+            'Produkt': accessory.Název,
+            'Kód': accessory.Kód
+        }));
     }
 
     updateDisplay() {
@@ -3135,6 +3247,150 @@ class DestovkaVsakovaciManager {
                     </button>
                 </div>`;
         }
+    }
+}
+
+class DestovkaCartDisplayManager {
+    constructor() {
+        this.container = document.getElementById('destovka-step12');
+        this.cartGenerator = new CartStructureGenerator();
+        this.feedData = new Map();
+        this.init();
+    }
+
+    async init() {
+        if (!this.container) return;
+        await this.loadXMLFeed();
+        this.cartItems = window.destovkaCart?.destGetAllItems() || [];
+        this.renderCart();
+    }
+
+    async loadXMLFeed() {
+        const response = await fetch('google.xml');
+        const text = await response.text();
+        const xml = new DOMParser().parseFromString(text, 'text/xml');
+        
+        const entries = xml.getElementsByTagName('entry');
+        for (const entry of entries) {
+            const productData = {
+                id: this.getElementText(entry, 'g:id'),
+                title: this.getElementText(entry, 'title'),
+                price: this.getElementText(entry, 'g:price'),
+                imageLink: this.getElementText(entry, 'g:image_link')
+            };
+            if (!productData.id) continue;
+            this.feedData.set(productData.id, productData);
+        }
+    }
+
+    renderCart() {
+        const cartContent = document.createElement('div');
+        cartContent.className = 'destovka-cart-content';
+        
+        // Seskupení podle kroků
+        const groupedItems = this.cartItems.reduce((acc, item) => {
+            const stepTitle = this.getStepTitle(item.step);
+            if (!acc[stepTitle]) acc[stepTitle] = [];
+            acc[stepTitle].push(item);
+            return acc;
+        }, {});
+    
+        // Render sekcí
+        Object.entries(groupedItems).forEach(([title, items]) => {
+            const itemsHtml = items.map(item => {
+                const feedData = this.feedData.get(item.productCode);
+                return this.cartGenerator.createCartItem({
+                    name: feedData?.title || item.name,
+                    imageUrl: feedData?.imageLink,
+                    price: feedData?.price,
+                    quantity: item.quantity
+                });
+            }).join('');
+    
+            cartContent.innerHTML += this.cartGenerator.createCartSection(title, itemsHtml);
+        });
+    
+        // Přidání sumáře
+        cartContent.innerHTML += this.cartGenerator.createCartTotalItem();
+        
+        this.container.innerHTML = '<h1>Konečný seznam vybraných položek</h1>';
+        this.container.appendChild(cartContent);
+        this.updateTotals();
+    }
+
+    initializeItemControls(itemElement, item) {
+        const removeButton = itemElement.querySelector('.destovka-cart-card-remove-button');
+        if (removeButton) {
+            removeButton.addEventListener('click', () => {
+                window.destovkaCart.destRemoveItem(item.productCode);
+                this.renderCart();
+            });
+        }
+    }
+
+    getElementText(parent, tagName) {
+        const element = parent.getElementsByTagName(tagName)[0];
+        return element ? element.textContent : '';
+    }
+
+    getItemFeedData(productCode) {
+        return window.destovkaTankManager?.feedData.get(productCode) || null;
+    }
+
+    createElementFromHTML(htmlString) {
+        const div = document.createElement('div');
+        div.innerHTML = htmlString.trim();
+        return div.firstChild;
+    }
+
+    extractPrice(priceString) {
+        if (!priceString) return 0;
+        const value = parseInt(priceString.replace(/[^0-9]/g, ''));
+        return isNaN(value) ? 0 : value;
+    }
+
+    updateTotals() {
+        let totalQuantity = 0;
+        let totalPriceWithVat = 0;
+
+        this.cartItems.forEach(item => {
+            const feedData = this.feedData.get(item.productCode);
+            const pricePerItem = this.extractPrice(feedData?.price || '0');
+            totalQuantity += item.quantity;
+            totalPriceWithVat += pricePerItem * item.quantity;
+        });
+
+        const totalPriceWithoutVat = Math.round(totalPriceWithVat / 1.21);
+
+        const totalPriceElement = this.container.querySelector('.destovka-cart-total-price');
+        const totalPriceWithoutVatElement = this.container.querySelector('.destovka-cart-total-price-without-vat');
+        const quantityElement = this.container.querySelector('.destovka-cart-total-wrapper div:first-child');
+
+        if (totalPriceElement) {
+            totalPriceElement.textContent = `${totalPriceWithVat.toLocaleString('cs-CZ')} Kč`;
+        }
+        if (totalPriceWithoutVatElement) {
+            totalPriceWithoutVatElement.textContent = `${totalPriceWithoutVat.toLocaleString('cs-CZ')} Kč`;
+        }
+        if (quantityElement) {
+            quantityElement.textContent = `celkem ${totalQuantity} kusů`;
+        }
+    }
+
+    getStepTitle(step) {
+        const titles = {
+            2: 'Nádrž',
+            3: 'Nástavce',
+            4: 'Filtrace',
+            5: 'Bezpečnostní přepad',
+            6: 'Čerpadlo',
+            7: 'Příslušenství čerpadla',
+            8: 'Hladinoměr',
+            9: 'Geigery',
+            10: 'Potrubí',
+            11: 'Vsakovací objekt'
+        };
+        return titles[step] || 'Ostatní';
     }
 }
 

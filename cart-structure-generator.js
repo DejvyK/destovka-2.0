@@ -4,6 +4,15 @@ class CartStructureGenerator {
         return `${parseInt(value).toLocaleString('cs-CZ')} Kč`;
     }
 
+    createCartSection(title, items) {
+        return `
+            <div class="destovka-cart-section">
+                <div class="destovka-cart-section-title">${title}</div>
+                ${items}
+            </div>
+        `;
+    }
+
     calculateSumPrice(cartItem) {
         return cartItem.price * cartItem.quantity;
     }
