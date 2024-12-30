@@ -18,7 +18,7 @@
         <section class="sidebar">
             <div class="destovka-side-container">
                 <div class="destovka-site-logo">
-                    <img src="https://destovka.eu/wp-content/themes/destovka-theme/img/header/logo.svg" alt="destovka-logo-konfigurator">
+                    <img src="https://cdn.myshoptet.com/usr/eshop.destovka.eu/user/logos/destovka-logo.svg" alt="destovka-logo-konfigurator">
                 </div>
                 <div class="destovka-sidebar">
                     <div id="stepsList" class="destovka-steps"></div>
@@ -37,13 +37,13 @@
                             document.querySelector('.destovka-autofill-button').addEventListener('click', () => {
                             const sampleData = {
                                 volumeRange: 3500,      // Změněno z 3000 na 3500 aby se zobrazily nádrže kolem této hodnoty
-                                concrete: 'no',  
+                                concrete: 'yes',  
                                 soil: 'clay',
-                                hsvDepth: 100,
+                                hsvDepth: 10,
                                 load: 'pochozí',     // Ponecháno pochozí - zobrazí se i nádrže s vyšší nosností
                                 inflowDiameter: '100/110',      
                                 outflowDiameter: '100/110',     
-                                inflowDepth: 420
+                                inflowDepth: 92
                             };
                         
                             Object.entries(sampleData).forEach(([id, value]) => {
@@ -209,6 +209,7 @@
                             </div>
                         </div>
 
+                       
                         <div class="destovka-form-group">
                             <div class="destovka-input-wrapper">
                                 <div class="destovka-label-wrapper">
@@ -219,14 +220,16 @@
                                             <p>Hloubka přítokového potrubí. Ovlivňuje nutnou hloubku výkopu pro nádrž.</p>
                                         </div>
                                     </div>
+                                    <button class="destovka-toggle-natok" type="button">Neznám hloubku nátoku</button>
                                 </div>
-                                <div class="destovka-input-row">
+                                <div id="destovka-direct-depth" class="destovka-input-row">
                                     <input type="number" class="destovka-input" id="inflowDepth" min="0">
                                     <button class="destovka-unit-button" data-current-unit="cm">cm</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="destovka-form-group">
+                        
+                        <div class="destovka-form-group" id="destovka-distance-group" style="display: none;">
                             <div class="destovka-input-wrapper">
                                 <div class="destovka-label-wrapper">
                                     <label class="destovka-label">9. Vzdálenost od domu</label>
@@ -238,14 +241,13 @@
                                     </div>
                                 </div>
                                 <div class="destovka-input-row">
-                                    <input  type="number" 
-                                            class="destovka-input" 
-                                            id="distance" 
-                                            min="0" 
-                                            max="1000"
-                                            onkeydown="return event.keyCode !== 69 && event.keyCode !== 187" 
-                                            oninput="this.value = this.value.replace(/[eE\+\-]/g, '')">
-                                            
+                                    <input type="number" 
+                                           class="destovka-input" 
+                                           id="distance" 
+                                           min="0" 
+                                           max="1000"
+                                           onkeydown="return event.keyCode !== 69 && event.keyCode !== 187" 
+                                           oninput="this.value = this.value.replace(/[eE\+\-]/g, '')">
                                     <button class="destovka-unit-button" data-current-unit="m">m</button>
                                 </div>
                             </div>

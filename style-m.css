@@ -190,6 +190,27 @@
   .destovka-konfig-calc-modal-header h2 {
       font-size: 20px;
   }
+
+  
+}
+
+@media (max-width: 830px) {
+    .destovka-vsakbox-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 32px;
+        max-width: 100vw;
+    }
+
+    .destovka-vsakbox-products {
+        width: 90%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
 }
 
 

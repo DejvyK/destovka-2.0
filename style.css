@@ -1029,3 +1029,261 @@ body {
     font-size: 16px;    
     font-weight: 500;
 }
+
+
+.destovka-toggle-natok {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    color: var(--destovka-primary);
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.destovka-toggle-natok:hover {
+    color: var(--destovka-inactive);
+}
+
+
+.destovka-height-info {
+    display: flex;
+    gap: 24px;
+    padding: 16px;
+    background-color: var(--destovka-bg-light);
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.destovka-height-info-item {
+    display: flex;  
+    gap: 8px;
+    color: var(--destovka-text-color);
+}
+
+.destovka-vsakbox-container {
+    display: flex;
+    width: 100%;
+    gap: 32px;
+}
+
+.destovka-vsakbox-products {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.destovka-vsakbox-product-container {
+    width: 100%;
+    background: white;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.destovka-vsakbox-product-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.destovka-vsakbox-product-image {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+}
+
+.destovka-vsakbox-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.destovka-vsakbox-product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.destovka-vsakbox-product-title {
+    font-weight: 500;
+    color: var(--destovka-text-color);
+    margin-bottom: 4px;
+}
+
+.destovka-vsakbox-product-price {
+    font-size: 14px;
+    color: var(--destovka-secondary-text-color);
+}
+
+.destovka-vsakbox-product-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+}
+
+.destovka-vsakbox-product-input {
+    width: 60px;
+    height: 40px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.destovka-vsakbox-product-unit {
+    color: var(--destovka-secondary-text-color);
+}
+
+.destovka-vsakbox-total {
+    margin-top: 16px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+}
+
+.destovka-vsakbox-grid-container {
+    padding: 24px;
+    background: white;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+}
+
+.destovka-vsakbox-grid-wrapper {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.destovka-vsakbox-grid-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+    margin-bottom: 24px;
+}
+
+.destovka-vsakbox-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--destovka-border-color);
+    border: 1px solid #000;
+    padding: 1px;
+    width: fit-content;
+}
+
+.destovka-vsakbox-height-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid #000;
+}
+
+.destovka-vsakbox-grid-row {
+    display: flex;
+    gap: 1.5px;
+    height: 30px;
+}
+
+.destovka-vsakbox-grid-cell {
+    width: 30px;
+    height: 30px;
+    background: white;
+    
+    box-sizing: border-box;
+}
+
+.destovka-vsakbox-grid-cell.active {
+    border: 0.1px solid black;
+}
+
+.destovka-vsakbox-grid-controls {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.destovka-vsakbox-dimension {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.destovka-vsakbox-dimension label {
+    width: 60px;
+    color: var(--destovka-text-color);
+}
+
+.destovka-vsakbox-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.destovka-vsakbox-minus,
+.destovka-vsakbox-plus {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.destovka-vsakbox-input {
+    width: 60px;
+    height: 32px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.destovka-vsakbox-measure {
+    color: var(--destovka-secondary-text-color);
+}
+
+.destovka-vsakbox-minus:hover,
+.destovka-vsakbox-plus:hover {
+    background: var(--destovka-bg-light);
+}
+
+.destovka-vsakbox-input::-webkit-outer-spin-button,
+.destovka-vsakbox-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.destovka-vsak-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    background-color: var(--destovka-bg-light);
+    border-radius: 8px;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 100vw;
+}
+
+.destovka-vsak-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.destovka-vsak-info-row strong {
+    color: var(--destovka-success);
+    font-size: 18px;
+}

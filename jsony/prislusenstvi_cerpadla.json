@@ -1,0 +1,27 @@
+[
+    {
+        "Číslo ID": "1",
+        "Kód": "18970-29",
+        "Název": "Sada pro zalévání GARDENA"
+    },
+    {
+        "Číslo ID": "2",
+        "Kód": "8266-20-SADA-IN",
+        "Název": "Sada pro rozvod vody po zahradě GARDENA - vnitřní závit"
+    },
+    {
+        "Číslo ID": "3",
+        "Kód": "8266-20-SADA-OUT",
+        "Název": "Sada pro rozvod vody po zahradě GARDENA - vnější závit"
+    },
+    {
+        "Číslo ID": "4",
+        "Kód": "18970-29/8266-20-SADA-IN",
+        "Název": "Sada pro rozvod vody po zahradě a zalévání GARDENA - vnitřní závit"
+    },
+    {
+        "Číslo ID": "5",
+        "Kód": "18970-29/8266-20-SADA-OUT",
+        "Název": "Sada pro rozvod vody po zahradě a zalévání GARDENA - vnější závit"
+    }
+]

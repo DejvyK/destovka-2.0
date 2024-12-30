@@ -14,10 +14,11 @@ class DestovkaKonfigCalculator {
             calcButton.style.display = 'flex';
             calcButton.style.cursor = 'pointer';
             calcButton.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calculator" viewBox="0 0 16 16">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" style="margin-right:7px" class="bi bi-calculator" viewBox="0 0 16 16">
                 <path d="M12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
                 <path d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3-6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
-            </svg>`;
+                
+            </svg>(Kalkulačka)`;
             calcButton.onclick = () => this.showCalculator();
 
             const labelWrapper = document.querySelector('.destovka-label-wrapper')
@@ -144,197 +145,329 @@ class DestovkaTankFilter {
     constructor(formData) {
         this.formData = formData;
         this.selectedTankCode = window.destovkaCart?.destGetItemsByStep(2)[0]?.productCode;
-        this.priorities = {
-            volume: 10,        // Objem
-            diameter: 8,       // DN kompatibilita
-            load: 6,          // Pojezdnost
-            clayCompatibility: 4    // Vhodnost pro jílovitou půdu
-        };
         
-        this.VOLUME_TOLERANCE = 0.2; // 20% tolerance pro objem
-
-        // Předpočítané hodnoty pro optimalizaci
-        this.requiredVolume = parseInt(this.formData.get('volume'));
-        this.minVolume = this.requiredVolume * (1 - this.VOLUME_TOLERANCE);
-        this.maxVolume = this.requiredVolume * (1 + this.VOLUME_TOLERANCE);
+        // Kritická nastavení z formuláře
+        this.wantsConcrete = this.formData.get('concrete') === 'yes';
         this.requiredLoad = this.formData.get('load');
+        this.requiredInflowDepth = parseFloat(this.formData.get('inflowDepth'));
+        this.requiredVolume = parseInt(this.formData.get('volume'));
+        this.soilType = this.formData.get('soil');
         this.requiredInflow = this.formData.get('inflowDiameter');
         this.requiredOutflow = this.formData.get('outflowDiameter');
-        this.loadHierarchy = ['pochozí', 'pojezdná do 3,5 t', 'pojezdná do 12 t'];
-        this.requiredLoadIndex = this.loadHierarchy.indexOf(this.requiredLoad);
+        
+        // Hierarchie zatížení pro porovnání
+        this.loadHierarchy = [
+            'pochozí',
+            'pojezdná do 3,5 t',
+            'pojezdná do 12 t'
+        ];
+        
+        // Objemová tolerance a kroky
+        this.initialVolumeTolerance = 0.1;  // 10%
+        this.maxVolumeTolerance = 0.3;      // 30%
+        this.volumeToleranceStep = 0.05;    // 5% krok pro navyšování tolerance
+        
+        // Váhy pro bodování
+        this.weights = {
+            load: 40,       // Nejvyšší váha pro zatížení
+            earthworks: 30, // Váha pro zemní práce
+            volume: 30      // Váha pro objem
+        };
+
+        this.extensionCalculator = null;
+        this.accessoryCalculator = null;
+
+        console.log('Tank Filter initialized with settings:', {
+            concrete: this.wantsConcrete,
+            load: this.requiredLoad,
+            inflowDepth: this.requiredInflowDepth,
+            volume: this.requiredVolume
+        });
     }
 
-    filterTanks(tanks) {
+    async filterTanks(tanks) {
         if (!tanks || !Array.isArray(tanks) || tanks.length === 0) {
             return [];
         }
-
-        let filteredTanks = [];
-
-        // Pokud existuje vybraná nádrž, vždy ji zahrneme
+     
+        let selectedTank = null;
         if (this.selectedTankCode) {
-            const selectedTank = tanks.find(tank => tank['Kód'] === this.selectedTankCode);
+            selectedTank = tanks.find(tank => tank['Kód'] === this.selectedTankCode);
             if (selectedTank) {
-                filteredTanks.push({
+                selectedTank = {
                     ...selectedTank,
-                    score: this.calculateTankScore(selectedTank)
-                });
+                    score: await this.calculateTankScore(selectedTank)
+                };
             }
         }
-
-        // Filtrujeme a hodnotíme zbývající nádrže
-        const otherTanks = tanks
-            .filter(tank => tank['Kód'] !== this.selectedTankCode) // Vyloučíme již přidanou vybranou nádrž
-            .filter(tank => this.meetsRequiredCriteria(tank))
-            .map(tank => ({
-                ...tank,
-                score: this.calculateTankScore(tank)
-            }))
-            .sort((a, b) => b.score - a.score);
-
-        // Omezíme počet alternativních nádrží
-        const maxAlternatives = this.selectedTankCode ? 2 : 3;
-        const alternativeTanks = otherTanks.slice(0, maxAlternatives);
-
-        // Spojíme vybranou nádrž s alternativami
-        filteredTanks = [...filteredTanks, ...alternativeTanks];
-
-        // Pokud nemáme žádné nádrže, vrátíme prázdné pole
+     
+        let currentTolerance = this.initialVolumeTolerance;
+        let filteredTanks = [];
+     
+        while (currentTolerance <= this.maxVolumeTolerance) {
+            const validTanks = [];
+            
+            for (const tank of tanks) {
+                if (await this.passesCriticalFilters(tank) && this.passesVolumeFilter(tank, currentTolerance)) {
+                    const score = await this.calculateTankScore(tank);
+                    validTanks.push({
+                        ...tank,
+                        score
+                    });
+                }
+            }
+     
+            filteredTanks = validTanks.sort((a, b) => b.score - a.score);
+     
+            if (filteredTanks.length >= 3) break;
+            currentTolerance += this.volumeToleranceStep;
+        }
+     
         if (filteredTanks.length === 0) {
-            console.log('Nenalezeny žádné vyhovující nádrže');
             return [];
         }
+     
+        let topTanks = filteredTanks.slice(0, 3);
+        
+        if (selectedTank && !topTanks.find(tank => tank['Kód'] === selectedTank['Kód'])) {
+            topTanks.push(selectedTank);
+        }
+     
+        const recommendedTank = this.getRecommendedTank(topTanks);
+        
+        const finalTanks = [
+            recommendedTank,
+            ...topTanks.filter(tank => tank['Kód'] !== recommendedTank['Kód'])
+        ];
 
-        return filteredTanks;
+        this.logFinalTanksScoring(finalTanks);
+     
+        return finalTanks;
+     }
+
+     logFinalTanksScoring(finalTanks) {
+        console.group('🎯 Finální výběr nádrží:');
+        
+        finalTanks.forEach((tank, index) => {
+            const marginScore = parseFloat(tank['Marze (%)'].trim()) || 0;
+            const normalizedMarginScore = Math.min(marginScore / 25, 1);
+    
+            console.group(`${index + 1}. ${tank['Typ nádrže']} ${tank['Objemové označení']} (${tank['Kód']})`);
+            
+            console.log('📊 Celkové skóre:', Math.round(tank.score * 100) + '%');
+            
+            console.group('🎯 Dílčí skóre:');
+            const earthworksScore = this.calculateEarthworksScore(tank);
+            const volumeScore = this.calculateVolumeScore(tank);
+            
+            console.log('🏗️ Zemní práce:', Math.round(earthworksScore * 100) + '%', '(váha 60%)');
+            console.log('📦 Objem:', Math.round(volumeScore * 100) + '%', '(váha 30%)');
+            console.log('💰 Marže:', Math.round(marginScore) + '%', `(${Math.round(normalizedMarginScore * 100)}% z max, váha 10%)`);
+            console.groupEnd();
+    
+            console.group('📝 Klíčové parametry:');
+            console.log('Požadovaný objem:', `${this.requiredVolume.toLocaleString()} l`);
+            console.log('Skutečný objem:', `${parseInt(tank['Objem (l)']).toLocaleString()} l`);
+            
+            console.group('📏 Analýza výšek:');
+            const defaultInflowDepth = parseInt(tank['Hloubka nátoku bez nástavce (mm)']);
+            const requiredDepth = this.requiredInflowDepth;
+            const missingHeight = Math.max(0, requiredDepth - defaultInflowDepth);
+            const maxPossibleHeight = parseInt(tank['Max. překrytí zeminou (mm)']);
+            const remainingHeight = maxPossibleHeight - missingHeight;
+            
+            console.log('Požadovaná hloubka nátoku:', `${requiredDepth} mm`);
+            console.log('Výchozí hloubka nátoku:', `${defaultInflowDepth} mm`);
+            console.log('Chybějící výška:', `${missingHeight} mm`, missingHeight > 0 ? '⚠️ Potřeba nástavců!' : '✅');
+            console.log('Max. možné překrytí:', `${maxPossibleHeight} mm`);
+            console.log('Zbývající prostor pro nástavce:', `${remainingHeight} mm`);
+            console.groupEnd();
+    
+            console.log('Marže:', `${tank['Marze (%)']}%`);
+            
+            console.group('💪 Zatížení:');
+            console.log('Požadované:', this.requiredLoad);
+            console.log('Dostupné:', [tank.Zatizeni1, tank.Zatizeni2, tank.Zatizeni3].filter(Boolean).join(', '));
+            console.groupEnd();
+    
+            console.groupEnd();
+            console.groupEnd();
+        });
+    
+        console.groupEnd();
     }
 
-    meetsRequiredCriteria(tank) {
-        // Kontrola objemu s tolerancí
-        const volumeOk = this.checkVolumeMatch(tank);
-        console.log(`Tank ${tank.Kód} - Volume check: ${volumeOk}`);
-        if (!volumeOk) return false;
+    getRecommendedTank(tanks) {
+        return tanks.reduce((recommended, current) => {
+            const currentMargin = parseFloat(current['Marze (%)']) || 0;
+            const recommendedMargin = parseFloat(recommended['Marze (%)']) || 0;
+            return currentMargin > recommendedMargin ? current : recommended;
+        }, tanks[0]);
+    }
+
+    async passesCriticalFilters(tank) {
+        // 1. NEJVYŠŠÍ PRIORITA - Zatížení
+        if (!this.passesLoadCheck(tank)) {
+            return false;
+        }
     
-        // Kontrola DN kompatibility
-        const diameterOk = this.checkDiameterCompatibility(tank);
-        console.log(`Tank ${tank.Kód} - Diameter check: ${diameterOk}`);
-        if (!diameterOk) return false;
+        // 2. DRUHÁ PRIORITA - Zemní práce
+        const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']);
+        if (maxCovering < this.requiredInflowDepth) {
+            return false;
+        }
     
-        // Kontrola pojezdnosti
-        const loadOk = this.checkLoadCompatibility(tank);
-        console.log(`Tank ${tank.Kód} - Load check: ${loadOk}`);
-        if (!loadOk) return false;
+        const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
+        if (defaultInflowDepth > this.requiredInflowDepth) {
+            return false;
+        }
+    
+        // 3. TŘETÍ PRIORITA - Objem se řeší v passesVolumeFilter s tolerancí
+    
+        // Ostatní kontroly
+        if (!this.wantsConcrete && tank['Konstrukce'] === 'Plastová samonosná na desku') {
+            return false;
+        }
+    
+        if (!this.passesDNCheck(tank)) {
+            return false;
+        }
+    
+        if (this.soilType === 'clay' && tank['Vhodné do jílovité půdy'] !== 'ANO') {
+            return false;
+        }
     
         return true;
     }
 
-    calculateTankScore(tank) {
-        let score = 0;
+    async passesExtensionCheck(tank) {
+        this.extensionCalculator = new ExtensionCalculator(
+            tank['Systém'],
+            this.requiredInflowDepth,
+            parseFloat(tank['Hloubka nátoku bez nástavce (mm)'])
+        );
 
-        // Objem - čím blíže požadovanému objemu, tím lepší skóre
-        const volumeMatch = this.getVolumeMatchScore(tank);
-        score += volumeMatch * this.priorities.volume;
-
-        // DN kompatibilita
-        if (this.checkDiameterCompatibility(tank)) {
-            score += this.priorities.diameter;
+        const result = await this.extensionCalculator.findExtensionCombinations();
+        
+        if (result.combinations.length === 0) {
+            return false;
         }
 
-        // Pojezdnost
-        const loadScore = this.getLoadScore(tank);
-        score += loadScore * this.priorities.load;
-
-        // Vhodnost pro jílovitou půdu
-        if (this.formData.get('soil') === 'clay' && tank['Vhodné do jílovité půdy'] === 'ANO') {
-            score += this.priorities.clayCompatibility;
+        const isHeavyLoad = this.loadHierarchy.indexOf(this.requiredLoad) >= 1;
+        if (isHeavyLoad) {
+            const bestCombination = result.combinations[0];
+            return bestCombination.totalHeight >= 500;
         }
 
-        return score;
+        return true;
     }
 
-    checkVolumeMatch(tank) {
-        const requiredVolume = parseInt(this.formData.get('volume'));
-        const tankVolume = parseInt(tank['Objem (l)']);
+    passesLoadCheck(tank) {
+        const tankLoads = [tank.Zatizeni1, tank.Zatizeni2, tank.Zatizeni3]
+            .filter(Boolean);
         
-        const minVolume = requiredVolume * (1 - this.VOLUME_TOLERANCE);
-        const maxVolume = requiredVolume * (1 + this.VOLUME_TOLERANCE);
-
-        return tankVolume >= minVolume && tankVolume <= maxVolume;
-    }
-
-    getVolumeMatchScore(tank) {
-        const requiredVolume = parseInt(this.formData.get('volume'));
-        const tankVolume = parseInt(tank['Objem (l)']);
+        const requiredLoadIndex = this.loadHierarchy.indexOf(this.requiredLoad);
         
-        // Čím menší rozdíl, tím lepší skóre (max 1)
-        return 1 - Math.abs(tankVolume - requiredVolume) / requiredVolume;
-    }
-
-    checkLoadCompatibility(tank) {
-        const requiredLoad = this.formData.get('load');
-        
-        // Získáme všechna zatížení nádrže
-        const tankLoads = [
-            tank['Zatizeni1'],
-            tank['Zatizeni2'], 
-            tank['Zatizeni3']
-        ].filter(Boolean);
-        
-        // Definujeme hierarchii zatížení (od nejnižšího po nejvyšší)
-        const loadHierarchy = [
-            'pochozí',
-            'pojezdná do 3,5 t',
-            'pojezdná do 12 t'
-        ];
-        
-        // Najdeme index požadovaného zatížení
-        const requiredLoadIndex = loadHierarchy.indexOf(requiredLoad);
-        
-        // Pro každé zatížení nádrže zkontrolujeme, zda je stejné nebo vyšší než požadované
         return tankLoads.some(tankLoad => {
-            const tankLoadIndex = loadHierarchy.indexOf(tankLoad);
+            const tankLoadIndex = this.loadHierarchy.indexOf(tankLoad);
             return tankLoadIndex >= requiredLoadIndex;
         });
     }
-    
-    getLoadScore(tank) {
-        const requiredLoad = this.formData.get('load');
-        const tankLoads = [
-            tank['Zatizeni1'],
-            tank['Zatizeni2'],
-            tank['Zatizeni3']
-        ].filter(Boolean);
-    
-        // Definujeme hierarchii zatížení
-        const loadHierarchy = [
-            'pochozí',
-            'pojezdná do 3,5 t',
-            'pojezdná do 12 t'
-        ];
-    
-        // Najdeme nejvyšší zatížení nádrže
-        const maxTankLoadIndex = Math.max(...tankLoads.map(load => loadHierarchy.indexOf(load)));
-        const requiredLoadIndex = loadHierarchy.indexOf(requiredLoad);
-    
-        if (maxTankLoadIndex === requiredLoadIndex) {
-            // Přesná shoda = plné skóre
-            return 1;
-        } else if (maxTankLoadIndex > requiredLoadIndex) {
-            // Nádrž má lepší vlastnosti než požadované = 0.8 skóre
-            return 0.8;
+
+    passesEarthworksCheck(tank) {
+        const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']);
+        const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
+
+        // Překrytí zeminou musí být větší než požadovaná hloubka nátoku
+        if (maxCovering < this.requiredInflowDepth) {
+            return false;
         }
+
+        // Defaultní hloubka nátoku musí být menší než požadovaná
+        // (zbytek se dorovná nástavci)
+        if (defaultInflowDepth > this.requiredInflowDepth) {
+            return false;
+        }
+
+        return true;
+    }
+
+    passesDNCheck(tank) {
+        const inflowOk = tank[`DN${this.requiredInflow}`] === "ANO";
+        const outflowOk = tank[`DN${this.requiredOutflow}`] === "ANO";
+        return inflowOk && outflowOk;
+    }
+
+    passesVolumeFilter(tank, tolerance) {
+        const tankVolume = parseInt(tank['Objem (l)']);
+        const minVolume = this.requiredVolume * (1 - tolerance);
+        const maxVolume = this.requiredVolume * (1 + tolerance);
+        
+        return tankVolume >= minVolume && tankVolume <= maxVolume;
+    }
+
+    calculateTankScore(tank) {
+        let maxScore = 100;
+        let score = 0;
     
+        // Zemní práce - 60% celkového skóre
+        const earthworksScore = this.calculateEarthworksScore(tank);
+        score += earthworksScore * 60;
+    
+        // Objem - 30% celkového skóre
+        const volumeScore = this.calculateVolumeScore(tank);
+        score += volumeScore * 30;
+    
+        // Bonus za marži - 10% celkového skóre
+        const marginScore = parseFloat(tank['Marze (%)'].trim()) || 0;
+        // Předpokládáme, že běžná marže je mezi 0-25%, takže dělíme 25 pro normalizaci
+        const normalizedMarginScore = Math.min(marginScore / 25, 1);
+        score += normalizedMarginScore * 10;
+    
+        return score / maxScore;
+    }
+
+    calculateLoadScore(tank) {
+        const tankLoads = [tank.Zatizeni1, tank.Zatizeni2, tank.Zatizeni3]
+            .filter(Boolean);
+        
+        const requiredLoadIndex = this.loadHierarchy.indexOf(this.requiredLoad);
+        const maxTankLoadIndex = Math.max(
+            ...tankLoads.map(load => this.loadHierarchy.indexOf(load))
+        );
+
+        if (maxTankLoadIndex === requiredLoadIndex) {
+            return 1; // Přesná shoda = 100%
+        } else if (maxTankLoadIndex > requiredLoadIndex) {
+            return 0.8; // Vyšší zatížení = 80%
+        }
+
         return 0;
     }
-    
-    checkDiameterCompatibility(tank) {
-        const requiredInflow = this.formData.get('inflowDiameter');
-        const requiredOutflow = this.formData.get('outflowDiameter');
-    
-        // Kontrola vstupního DN - použijeme přímé mapování na sloupce v JSONu
-        const inflowOk = tank[`DN${requiredInflow}`] === "ANO";
-        const outflowOk = tank[`DN${requiredOutflow}`] === "ANO";
-    
-        return inflowOk && outflowOk;
+
+    calculateEarthworksScore(tank) {
+        const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']);
+        const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
+        
+        // Skóre za překrytí zeminou (max 0.5)
+        const coveringScore = Math.max(0, 1 - 
+            Math.abs(maxCovering - this.requiredInflowDepth) / this.requiredInflowDepth) * 0.5;
+        
+        // Skóre za hloubku nátoku (max 0.5)
+        const depthScore = Math.max(0, 1 - 
+            Math.abs(defaultInflowDepth - this.requiredInflowDepth) / this.requiredInflowDepth) * 0.5;
+        
+        return coveringScore + depthScore;
+    }
+
+    calculateVolumeScore(tank) {
+        const tankVolume = parseInt(tank['Objem (l)']);
+        if (tankVolume < this.requiredVolume) {
+            return 0; // Pokud je objem menší než požadovaný, vrátíme 0
+        }
+        
+        const volumeDiff = Math.abs(tankVolume - this.requiredVolume) / this.requiredVolume;
+        return Math.max(0, 1 - volumeDiff);
     }
 }
 
@@ -411,7 +544,7 @@ class DestovkaTankManager {
     }
 
     async fetchJSON() {
-        const response = await fetch('test.json');
+        const response = await fetch('jsony/nadrze.json');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -487,25 +620,36 @@ class DestovkaTankManager {
         }
     }
 
-    renderTanks() {
+    async renderTanks() {
         if (!this.tanksContainer) return;
     
-        const filteredTanks = this.tankFilter 
-            ? this.tankFilter.filterTanks(this.tanksData)
-            : this.tanksData;
-        
-        if (filteredTanks.length === 0) {
-            this.renderNoResults();
-            return;
-        }
+        try {
+            const filteredTanks = await this.tankFilter?.filterTanks(this.tanksData) || [];
+            
+            if (filteredTanks.length === 0) {
+                this.renderNoResults();
+                return;
+            }
     
-        this.tanksContainer.innerHTML = '';
-        
-        filteredTanks.forEach((tankData, index) => {
-            const feedData = this.getFeedDataForTank(tankData.Kód);
-            const tankElement = this.createTankElement(tankData, feedData, index === 0);
-            this.tanksContainer.appendChild(tankElement);
-        });
+            this.tanksContainer.innerHTML = '';
+            
+            for (const [index, tankData] of filteredTanks.entries()) {
+                const feedData = this.getFeedDataForTank(tankData.Kód);
+                const tankElement = this.createTankElement(tankData, feedData, index === 0);
+                if (tankElement) {
+                    this.tanksContainer.appendChild(tankElement);
+                    this.initializeTankSelection(tankElement, tankData, feedData);
+                }
+            }
+    
+        } catch (error) {
+            console.error('Error rendering tanks:', error);
+            this.tanksContainer.innerHTML = `
+                <div class="destovka-error-message">
+                    <p>Došlo k chybě při načítání nádrží. Prosím zkuste to znovu.</p>
+                </div>
+            `;
+        }
     }
 
     createTankElement(data, feedData, isRecommended) {
@@ -570,25 +714,23 @@ class DestovkaTankManager {
     }
 
     initializeTankSelection(tankElement, tankData, feedData) {
+        if (!tankElement) return;
+        
         const selectButton = tankElement.querySelector('.destovka-tank-select');
+        if (!selectButton) return;
         
         selectButton.addEventListener('click', () => {
-            // Zkontrolujeme jestli již není nějaká nádrž vybraná
             const currentTank = window.destovkaCart?.destGetItemsByStep(2)[0];
             
             if (currentTank) {
-                // Pokud je to stejná nádrž, ignore
                 if (currentTank.productCode === tankData['Kód']) return;
                 
-                // Jinak se zeptáme uživatele
                 if (!confirm('Již máte vybranou nádrž. Chcete ji nahradit novou?')) {
                     return;
                 }
-                // Odstraníme starou nádrž
                 window.destovkaCart.destRemoveItem(currentTank.productCode);
             }
     
-            // Přidáme novou nádrž
             window.destovkaCart.destAddItem(2, tankData['Kód'], 1, {
                 name: `${tankData['Typ nádrže']} ${tankData['Objemové označení']}`,
                 price: this.extractPrice(feedData.price),
@@ -596,7 +738,6 @@ class DestovkaTankManager {
                 imageUrl: feedData.imageLink || 'none'
             });
     
-            // Překreslíme nádrže pro aktualizaci vizuální indikace
             this.renderTanks();
         });
     }
@@ -632,6 +773,12 @@ class DestovkaTankManager {
     }
 
     generateSpecsRows(data) {
+        // Určení vhodných DN
+        let suitableDN = [];
+        if (data['DN100/110'] === 'ANO') suitableDN.push('100/110');
+        if (data['DN125'] === 'ANO') suitableDN.push('125');
+        if (data['DN150/160'] === 'ANO') suitableDN.push('150/160');
+    
         const specs = [
             { label: 'Konstrukce', key: 'Konstrukce' },
             { label: 'Objem (l)', key: 'Objem (l)' },
@@ -644,14 +791,17 @@ class DestovkaTankManager {
             { label: 'Vhodné do jílovité půdy', key: 'Vhodné do jílovité půdy' },
             { label: 'Integrovaný filtrační koš', key: 'Integrovaný filtrační koš' },
             { label: 'Integrovaný bezpečnostní přepad', key: 'Integrovaný bezpečnostní přepad (sifon)' },
-            { label: 'Poklop v ceně', key: 'Poklop v ceně (žádný/nepochozí/pochozí/do 1,5 t/do 3,5 t/do 12,5 t/do 40 t' }
+            { label: 'Poklop v ceně', key: 'Poklop v ceně (žádný/nepochozí/pochozí/do 1,5 t/do 3,5 t/do 12,5 t/do 40 t' },
+            { label: 'Vhodné pro potrubí DN', type: 'custom', value: suitableDN.length > 0 ? suitableDN.join(', ') : '-' },
+            { label: 'Přibližná velikost výkopu (m³)', key: 'Přibližná velikost výkopu (m3)' },
+            { label: 'Přibližné množství zásypu (m³)', key: 'Přibližné množství zásypu (m3)' }
         ];
-
+    
         return specs
             .map(spec => `
                 <tr>
                     <td>${spec.label}</td>
-                    <td>${data[spec.key] || '-'}</td>
+                    <td>${spec.type === 'custom' ? spec.value : (data[spec.key] || '-')}</td>
                 </tr>
             `)
             .join('');
@@ -676,6 +826,65 @@ class DestovkaTankManager {
     }
 }
 
+
+
+class CoverCalculator {
+    constructor(tankSystem, requiredLoad, availableSpace) {
+        this.tankSystem = tankSystem;
+        this.requiredLoad = requiredLoad;
+        this.availableSpace = availableSpace;
+        this.covers = [];
+        this.loadCoverData();
+    }
+
+    async loadCoverData() {
+        try {
+            const response = await fetch('jsony/poklopy.json');
+            if (!response.ok) throw new Error('Failed to load covers');
+            const data = await response.json();
+            
+            this.covers = data.filter(cover => 
+                cover.Systém === this.tankSystem &&
+                this.meetsLoadRequirements(cover.Zatížení) &&
+                this.fitsAvailableSpace(cover)
+            ).map(cover => ({
+                code: cover.Kód,
+                name: cover.Název,
+                load: cover.Zatížení,
+                minHeight: parseInt(cover['Minimální výška (mm)']),
+                maxHeight: parseInt(cover['Maximální výška (mm)']),
+                system: cover.Systém
+            }));
+        } catch (error) {
+            console.error('Error loading covers:', error);
+            this.covers = [];
+        }
+    }
+
+    meetsLoadRequirements(coverLoad) {
+        const loadHierarchy = [
+            'nepochozí',
+            'pochozí',
+            'pojezdná do 3,5 t',
+            'pojezdná do 12 t'
+        ];
+        
+        const requiredLoadIndex = loadHierarchy.indexOf(this.requiredLoad);
+        const coverLoadIndex = loadHierarchy.indexOf(coverLoad);
+        
+        return coverLoadIndex >= requiredLoadIndex;
+    }
+
+    fitsAvailableSpace(cover) {
+        const minHeight = parseInt(cover['Minimální výška (mm)']);
+        return minHeight <= this.availableSpace;
+    }
+
+    findSuitableCovers() {
+        return this.covers.sort((a, b) => a.minHeight - b.minHeight);
+    }
+}
+
 class DestovkaAccessoriesManager {
     constructor() {
         this.container = document.querySelector('#destovka-step3');
@@ -686,17 +895,18 @@ class DestovkaAccessoriesManager {
     }
 
     async init() {
+        console.group('🚀 Initializing AccessoriesManager');
         try {
-            await Promise.all([
-                this.loadAccessoriesData(),
-                this.loadXMLFeed()
-            ]);
+            await this.loadAccessoriesData();
+            await this.loadXMLFeed();
             this.initProductContainer();
             this.updateDisplay();
+            console.log('✅ Initialization complete');
         } catch (error) {
-            console.error('Chyba při inicializaci AccessoriesManager:', error);
+            console.error('❌ Error during initialization:', error);
             this.handleError();
         }
+        console.groupEnd();
     }
 
     async loadAccessoriesData() {
@@ -706,6 +916,38 @@ class DestovkaAccessoriesManager {
         }
         this.accessoriesData = await response.json();
     }
+
+    displayExtensionResults(result, heightData) {
+        console.group('🎨 Displaying Results');
+        
+        let content = `
+            <div class="destovka-height-info">
+                <div class="destovka-height-info-item">
+                    <span>Chybějící výška:</span> 
+                    <strong>${heightData.remaining}mm</strong>
+                </div>
+                <div class="destovka-height-info-item">
+                    <span>Max povolená výška:</span> 
+                    <strong>${heightData.maxAllowed}mm</strong>
+                </div>
+            </div>`;
+
+        if (result.combinations.length === 0) {
+            console.log('⚠️ No suitable combinations found');
+            content += `
+                <div class="destovka-no-results">
+                    ${result.message}
+                </div>`;
+        } else {
+            console.log('✅ Rendering combinations:', result.combinations);
+            content += this.renderCombinations(result.combinations);
+        }
+
+        this.productContainer.innerHTML = content;
+        this.initializeSelectionHandlers();
+        console.groupEnd();
+    }
+
 
     async loadXMLFeed() {
         const response = await fetch('google.xml');
@@ -729,6 +971,183 @@ class DestovkaAccessoriesManager {
             this.feedData.set(productData.id, productData);
         }
     }
+
+    calculateRemainingHeight(selectedTank) {
+        console.group('📐 Calculating Required Heights');
+        
+        const tankData = window.destovkaTankManager?.tanksData.find(
+            tank => tank['Kód'] === selectedTank.productCode
+        );
+        
+        if (!tankData) {
+            console.error('❌ Tank data not found');
+            console.groupEnd();
+            return null;
+        }
+
+        const defaultInflowDepth = parseInt(tankData['Hloubka nátoku bez nástavce (mm)']);
+        const requiredDepth = parseInt(window.destovkaStepManager?.formData.get('inflowDepth'));
+        const maxAllowedHeight = parseInt(tankData['Max. překrytí zeminou (mm)']);
+
+        const result = {
+            remaining: Math.max(0, requiredDepth - defaultInflowDepth),
+            maxAllowed: maxAllowedHeight,
+            defaultDepth: defaultInflowDepth,
+            tankSystem: tankData['Systém']
+        };
+
+        console.log('📊 Height calculations:', result);
+        console.groupEnd();
+        return result;
+    }
+
+    initializeCounters() {
+        const counters = this.container.querySelectorAll('.destovka-quantity-counter');
+        
+        counters.forEach(counter => {
+            const input = counter.querySelector('.destovka-quantity-input');
+            const decreaseBtn = counter.querySelector('.destovka-quantity-decrease');
+            const increaseBtn = counter.querySelector('.destovka-quantity-increase');
+            
+            if (!input || !decreaseBtn || !increaseBtn) return;
+    
+            // Kontrola existujících nástavců v košíku
+            const existingItems = window.destovkaCart?.destGetItemsByStep(3) || [];
+            const existingItem = existingItems.find(item => item.productCode === input.dataset.code);
+            if (existingItem) {
+                input.value = existingItem.quantity;
+            }
+         
+            decreaseBtn.addEventListener('click', () => {
+                const currentValue = parseInt(input.value) || 0;
+                if (currentValue > 0) {
+                    input.value = currentValue - 1;
+                    this.updateCart(input.dataset.code, currentValue - 1);
+                }
+            });
+         
+            increaseBtn.addEventListener('click', () => {
+                const currentValue = parseInt(input.value) || 0;
+                input.value = currentValue + 1;
+                this.updateCart(input.dataset.code, currentValue + 1);
+            });
+         
+            input.addEventListener('change', () => {
+                let value = parseInt(input.value) || 0;
+                if (value < 0) value = 0;
+                input.value = value;
+                this.updateCart(input.dataset.code, value);
+            });
+        });
+    }
+
+     getCompatibleExtensions(system, remainingHeight, maxHeight) {
+        console.group('🔍 Hledání kompatibilních nástavců');
+        console.log('Systém:', system);
+        console.log('Zbývající výška:', remainingHeight, 'mm');
+        console.log('Max. povolená výška:', maxHeight, 'mm');
+    
+        const systemExtensions = this.accessoriesData.filter(ext => ext.Systém === system);
+        const usableExtensions = systemExtensions
+            .filter(ext => {
+                const height = parseInt(ext['Výška (mm)']);
+                return height >= remainingHeight && height <= maxHeight;
+            })
+            .sort((a, b) => parseInt(a['Výška (mm)']) - parseInt(b['Výška (mm)']));
+    
+        if (usableExtensions.length === 0) {
+            const recommendation = this.calculateExtensionRecommendation(
+                systemExtensions, 
+                remainingHeight, 
+                maxHeight
+            );
+            console.log('💡 Doporučení:', recommendation);
+            console.groupEnd();
+            return { extensions: [], recommendation };
+        }
+    
+        console.log('📏 Nalezené nástavce:', usableExtensions);
+        console.groupEnd();
+        return { extensions: usableExtensions, recommendation: null };
+    }
+
+    calculateExtensionRecommendation(extensions, remainingHeight, maxHeight) {
+        if (remainingHeight > maxHeight) {
+            return {
+                type: 'decrease',
+                amount: remainingHeight - maxHeight,
+                message: `Je potřeba snížit hloubku nátoku o ${remainingHeight - maxHeight}mm`
+            };
+        }
+    
+        const sortedExtensions = [...extensions].sort((a, b) => 
+            parseInt(a['Výška (mm)']) - parseInt(b['Výška (mm)'])
+        );
+    
+        const closestLarger = sortedExtensions.find(ext => 
+            parseInt(ext['Výška (mm)']) >= remainingHeight
+        );
+    
+        const closestSmaller = [...sortedExtensions]
+            .reverse()
+            .find(ext => parseInt(ext['Výška (mm)']) < remainingHeight);
+    
+        if (!closestLarger && !closestSmaller) {
+            return {
+                type: 'system',
+                message: 'Pro tento systém nejsou k dispozici žádné nástavce'
+            };
+        }
+    
+        if (closestLarger && parseInt(closestLarger['Výška (mm)']) <= maxHeight) {
+            const difference = parseInt(closestLarger['Výška (mm)']) - remainingHeight;
+            return {
+                type: 'cut',
+                amount: difference,
+                extension: closestLarger,
+                message: `Lze použít nástavec ${closestLarger['Výška (mm)']}mm a zkrátit ho o ${difference}mm`
+            };
+        }
+    
+        return {
+            type: 'decrease',
+            amount: remainingHeight,
+            message: `Je potřeba snížit hloubku nátoku o ${remainingHeight}mm`
+        };
+    }
+
+     extractPrice(priceString) {
+        if (!priceString) return 0;
+        return parseInt(priceString.replace(/[^0-9]/g, ''));
+    }
+     
+     updateCart(code, quantity) {
+        if (!code) return;
+        
+        if (quantity <= 0) {
+            window.destovkaCart?.destRemoveItem(code);
+        } else {
+            const selectedTank = window.destovkaCart?.destGetItemsByStep(2)[0];
+            if (!selectedTank) return;
+     
+            const tankData = window.destovkaTankManager?.tanksData.find(
+                tank => tank['Kód'] === selectedTank.productCode
+            );
+            if (!tankData || !tankData.accessories) return;
+     
+            const extension = tankData.accessories.extensions.find(ext => ext.code === code);
+            if (!extension) return;
+     
+            const feedData = this.getFeedDataForProduct(code);
+            window.destovkaCart?.destAddItem(3, code, quantity, {
+                name: `Nástavec ${extension.height}mm`,
+                price: this.extractPrice(feedData.price),
+                height: extension.height,
+                system: extension.system,
+                imageUrl: feedData.imageLink || 'none'
+            });
+        }
+     }
 
     getElementText(parent, tagName) {
         const element = parent.getElementsByTagName(tagName)[0];
@@ -759,48 +1178,117 @@ class DestovkaAccessoriesManager {
         this.productContainer = productContainer;
     }
 
-    filterAccessories() {
-        const selectedTank = window.destovkaCart?.destGetItemsByStep(2)[0];
-        if (!selectedTank) return [];
-
-        const tankData = window.destovkaTankManager?.tanksData.find(
-            tank => tank['Kód'] === selectedTank.productCode
-        );
-        if (!tankData) return [];
-
-        return this.accessoriesData.filter(accessory => 
-            accessory['Systém'] === tankData['Systém']
-        );
-    }
-
-    updateDisplay() {
-        const filteredAccessories = this.filterAccessories();
-        
-        if (!this.productContainer) return;
-    
-        if (filteredAccessories.length === 0) {
-            this.productContainer.innerHTML = `
-                <div class="destovka-no-results">
-                    Pro vybranou nádrž nejsou k dispozici žádné nástavce
-                </div>`;
+    async updateDisplay() {
+        console.group('🔄 Updating Display');
+        if (!this.productContainer) {
+            console.error('❌ Product container not found');
+            console.groupEnd();
             return;
         }
     
-        this.productContainer.innerHTML = '';
-        
-        filteredAccessories.forEach(accessory => {
-            const feedData = this.getFeedDataForProduct(accessory.Kód);
-            const productData = {
-                'Produkt': accessory.Název,
-                'Kód': accessory.Kód,
-                'Varianta': `Výška: ${accessory['Výška (mm)']} mm`
-            };
-            const productHtml = this.productGenerator.createProductItem(productData, feedData);
-            this.productContainer.innerHTML += productHtml;
-        });
+        const selectedTank = window.destovkaCart?.destGetItemsByStep(2)[0];
+        if (!selectedTank) {
+            this.productContainer.innerHTML = `
+                <div class="destovka-no-results">
+                    Nejprve prosím vyberte nádrž
+                </div>`;
+            console.groupEnd();
+            return;
+        }
     
-        // Inicializujeme event listenery pro výběr produktů
+        const tankData = window.destovkaTankManager?.tanksData.find(
+            tank => tank['Kód'] === selectedTank.productCode
+        );
+    
+        if (!tankData) {
+            this.productContainer.innerHTML = `
+                <div class="destovka-no-results">
+                    Nepodařilo se načíst potřebná data
+                </div>`;
+            console.groupEnd();
+            return;
+        }
+    
+        const heightData = this.calculateRemainingHeight(selectedTank);
+        if (!heightData) {
+            this.productContainer.innerHTML = `
+                <div class="destovka-no-results">
+                    Nepodařilo se spočítat potřebné výšky
+                </div>`;
+            console.groupEnd();
+            return;
+        }
+    
+        // Vytvoření kalkulátoru s již načtenými daty
+        const calculator = new ExtensionCalculator(
+            heightData.tankSystem,
+            heightData.remaining,
+            heightData.defaultDepth,
+            this.accessoriesData
+        );
+    
+        const result = await calculator.findExtensionCombinations();
+        console.log('🎯 Calculator results:', result);
+    
+        let extensionsHtml = `
+            <div class="destovka-height-info">
+                <div class="destovka-height-info-item">
+                    <span>Chybějící výška:</span> 
+                    <strong>${heightData.remaining}mm</strong>
+                </div>
+                <div class="destovka-height-info-item">
+                    <span>Max povolená výška:</span> 
+                    <strong>${heightData.maxAllowed}mm</strong>
+                </div>
+            </div>
+        `;
+    
+        if (result.combinations.length === 0) {
+            this.productContainer.innerHTML = `
+                <div class="destovka-no-results">
+                    ${result.message || 'Pro tuto nádrž nejsou k dispozici žádné nástavce'}
+                </div>`;
+            console.groupEnd();
+            return;
+        }
+    
+        extensionsHtml += '<div class="destovka-extensions-section">';
+        result.combinations.forEach(combination => {
+            combination.extensions.forEach(extension => {
+                const feedData = this.getFeedDataForProduct(extension.code);
+                const productData = {
+                    'Produkt': `Nástavec ${extension.height}mm`,
+                    'Kód': extension.code,
+                    'Systém': extension.system
+                };
+    
+                const cutNote = combination.needsCutting ? 
+                    `(lze zkrátit o ${combination.cutAmount}mm)` : '';
+    
+                extensionsHtml += `
+                    <div class="destovka-product-item">
+                        ${this.productGenerator.createProductItem(productData, feedData)}
+                        ${cutNote ? `<div class="destovka-product-note">${cutNote}</div>` : ''}
+                        <div class="destovka-quantity-counter">
+                            <button class="destovka-quantity-decrease">-</button>
+                            <input type="number" 
+                                   class="destovka-quantity-input" 
+                                   value="1" 
+                                   min="0" 
+                                   data-code="${extension.code}">
+                            <button class="destovka-quantity-increase">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+        extensionsHtml += '</div>';
+    
+        this.productContainer.innerHTML = extensionsHtml;
+        this.initializeCounters();
         this.productGenerator.initializeSelection(this.productContainer);
+        
+        console.groupEnd();
     }
 
     handleError() {
@@ -812,6 +1300,220 @@ class DestovkaAccessoriesManager {
                         Zkusit znovu
                     </button>
                 </div>`;
+        }
+    }
+}
+
+class ExtensionCalculator {
+    constructor(tankSystem, requiredDepth, tankDefaultDepth, existingExtensions) {
+        console.group('🔧 Initializing ExtensionCalculator');
+        console.log('Parameters:', {
+            tankSystem,
+            requiredDepth,
+            tankDefaultDepth,
+            extensionsProvided: !!existingExtensions
+        });
+
+        if (!tankSystem) throw new Error('Systém nádrže musí být specifikován');
+        if (isNaN(requiredDepth) || isNaN(tankDefaultDepth)) {
+            throw new Error('Hloubky musí být čísla');
+        }
+
+        this.tankSystem = tankSystem;
+        this.requiredDepth = parseFloat(requiredDepth);
+        this.tankDefaultDepth = parseFloat(tankDefaultDepth);
+        this.missingDepth = this.requiredDepth - this.tankDefaultDepth;
+        
+        // Použijeme již načtená data místo nového načítání
+        this.availableExtensions = (existingExtensions || [])
+            .filter(ext => ext.Systém === tankSystem)
+            .map(ext => ({
+                code: ext.Kód,
+                height: parseInt(ext['Výška (mm)']),
+                system: ext.Systém,
+                name: ext.Název
+            }))
+            .sort((a, b) => a.height - b.height);
+
+        console.log('Initialized with:', {
+            missingDepth: this.missingDepth,
+            availableExtensions: this.availableExtensions.length
+        });
+        console.groupEnd();
+    }
+
+    async initialize() {
+        console.log("checkopint1");
+        if (this.initialized) return;
+        await this.loadExtensionData();
+        this.initialized = true;
+        console.log("checkopint1");
+    }
+
+    async loadExtensionData() {
+        try {
+            console.group('📥 Načítání dat nástavců');
+            const response = await fetch('jsony/nastavec.json');
+            if (!response.ok) throw new Error('Failed to load extensions');
+            const data = await response.json();
+            console.log('Načtená data:', data);
+            console.log('Hledám nástavce pro systém:', this.tankSystem);
+            
+            this.availableExtensions = data.filter(ext => ext.Systém === this.tankSystem)
+                .map(ext => ({
+                    code: ext.Kód,
+                    height: parseInt(ext['Výška (mm)']),
+                    system: ext.Systém,
+                    name: ext.Název
+                }))
+                .sort((a, b) => a.height - b.height);
+            
+            console.log('Nalezené nástavce:', this.availableExtensions);
+            console.groupEnd();
+        } catch (error) {
+            console.error('Error loading extensions:', error);
+            this.availableExtensions = [];
+            throw error;
+        }
+    }
+
+    async findExtensionCombinations() {
+        console.group('🔍 Hledání kombinací nástavců');
+        console.log({
+            tankSystem: this.tankSystem,
+            requiredDepth: this.requiredDepth,
+            currentDepth: this.tankDefaultDepth,
+            missingDepth: this.missingDepth,
+            availableExtensions: this.availableExtensions
+        });
+    
+        if (this.missingDepth <= 0) {
+            console.log('✨ Není potřeba nástavec');
+            console.groupEnd();
+            return { combinations: [], message: 'Není potřeba nástavec' };
+        }
+    
+        if (this.availableExtensions.length === 0) {
+            console.log('❌ Žádné dostupné nástavce pro systém');
+            console.groupEnd();
+            return { 
+                combinations: [], 
+                message: `Pro systém ${this.tankSystem} nejsou k dispozici žádné nástavce` 
+            };
+        }
+    
+        // Kontrola přesné shody
+        const exactMatch = this.availableExtensions.find(ext => ext.height === this.missingDepth);
+        if (exactMatch) {
+            console.log('✅ Nalezen přesně odpovídající nástavec:', exactMatch);
+            console.groupEnd();
+            return {
+                combinations: [{
+                    extensions: [exactMatch],
+                    totalHeight: exactMatch.height,
+                    needsCutting: false,
+                    cutAmount: 0
+                }],
+                message: 'Nalezen přesně odpovídající nástavec'
+            };
+        }
+    
+        console.log('🔄 Hledání kombinací nástavců...');
+        const combinations = [];
+    
+        // Zkusíme najít jeden nástavec, který lze zkrátit
+        const singleExtension = this.availableExtensions.find(ext => ext.height > this.missingDepth);
+        if (singleExtension) {
+            console.log('✅ Nalezen jeden vhodný nástavec ke zkrácení:', singleExtension);
+            combinations.push({
+                extensions: [singleExtension],
+                totalHeight: singleExtension.height,
+                needsCutting: true,
+                cutAmount: singleExtension.height - this.missingDepth
+            });
+        }
+    
+        // Pokud nenajdeme jeden vhodný nástavec, hledáme kombinace
+        if (combinations.length === 0) {
+            console.log('🔄 Hledání kombinací dvou nástavců...');
+            this.findCombinationsRecursive([], this.missingDepth, 2, combinations);
+        }
+    
+        // Pokud stále nemáme kombinace, nabídneme všechny nástavce
+        if (combinations.length === 0) {
+            console.log('⚠️ Nenalezeny vhodné kombinace, vracím všechny nástavce');
+            return {
+                combinations: this.availableExtensions.map(ext => ({
+                    extensions: [ext],
+                    totalHeight: ext.height,
+                    needsCutting: ext.height > this.missingDepth,
+                    cutAmount: Math.max(0, ext.height - this.missingDepth)
+                })),
+                message: `Pro výšku ${this.missingDepth}mm můžete použít tyto nástavce. Některé bude nutné zkrátit.`
+            };
+        }
+    
+        // Seřadíme kombinace podle nejmenšího rozdílu od požadované výšky
+        combinations.sort((a, b) => {
+            const diffA = Math.abs(a.totalHeight - this.missingDepth);
+            const diffB = Math.abs(b.totalHeight - this.missingDepth);
+            if (diffA !== diffB) return diffA - diffB;
+            return a.extensions.length - b.extensions.length;
+        });
+    
+        const result = { 
+            combinations: combinations.slice(0, 3),
+            message: combinations[0]?.needsCutting ? 
+                `Nalezené nástavce bude třeba zkrátit o ${combinations[0].cutAmount}mm` : 
+                'Nalezeny vhodné kombinace nástavců'
+        };
+        
+        console.log('✅ Finální výsledek:', result);
+        console.groupEnd();
+        return result;
+    }
+
+     findCombinationsRecursive(current, remainingDepth, maxPieces, result) {
+        console.log("checkopint3");
+        const totalHeight = current.reduce((sum, ext) => sum + ext.height, 0);
+        
+        console.log('Kontrola kombinace:', {
+            aktuálníNástavce: current.map(ext => `${ext.name} (${ext.height}mm)`),
+            celkováVýška: totalHeight,
+            potřebnáVýška: this.missingDepth,
+            zbývajícíKusy: maxPieces
+        });
+        
+        if (totalHeight >= this.missingDepth) {
+            console.log('✅ Nalezena vyhovující kombinace!', {
+                nástavce: current.map(ext => `${ext.name} (${ext.height}mm)`),
+                celkováVýška: totalHeight,
+                potřebnéZkrácení: totalHeight - this.missingDepth
+            });
+            
+            result.push({
+                extensions: [...current],
+                totalHeight,
+                needsCutting: totalHeight > this.missingDepth,
+                cutAmount: totalHeight > this.missingDepth ? totalHeight - this.missingDepth : 0
+            });
+            return;
+        }
+    
+        if (maxPieces === 0) {
+            console.log('❌ Dosažen limit počtu nástavců');
+            return;
+        }
+    
+        console.log(`Zkouším přidat další nástavce (zbývá kusů: ${maxPieces})`);
+        for (const extension of this.availableExtensions) {
+            console.log(`Zkouším přidat:`, extension.name);
+            this.findCombinationsRecursive(
+                [...current, extension],
+                remainingDepth - extension.height,
+                maxPieces - 1,
+                result
+            );
         }
     }
 }
@@ -1195,6 +1897,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             'Ponorné s plovákovým spínačem',
             'Ponorné s automatickým spínačem', 
             'Systém pro zalévání a splachování',
+            'Zahradní čerpadlo',
             'žádné'
         ];
         this.init();
@@ -1271,6 +1974,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             'Ponorné s plovákovým spínačem': 'img/ponor_plovak.png',
             'Ponorné s automatickým spínačem': 'img/ponor_auto.png',
             'Systém pro zalévání a splachování': 'img/system_zalej.png',
+            'Zahradní čerpadlo': "img/zahradni_cerpadla.png",
             'žádné': 'img/delete.png'
         };
 
@@ -1329,8 +2033,15 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         ).map(pump => ({
             'Produkt': pump.Název,
             'Kód': pump.Kód,
-            'Kategorie': pump.Kategorie,  // přidáme kategorii
-            ...pump
+            'Kategorie': pump.Kategorie,
+            'Záruka (let)': pump['Záruka (let)'],
+            'Max. průtok (l/hod)': pump['Max. průtok (l/hod)'],
+            'Max. výtlak (m)': pump['Max. výtlak (m)'],
+            'Max. ponor (m)': pump['Max. ponor (m)'],
+            'Výkon (W)': pump['Výkon (W)'],
+            'PříslušenstvíID1': pump.PříslušenstvíID1,
+            'PříslušenstvíID2': pump.PříslušenstvíID2,
+            'PříslušenstvíID3': pump.PříslušenstvíID3
         }));
     }
 
@@ -1345,6 +2056,12 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         }
         if (pump['Výkon (W)']) {
             specs.push(`Výkon: ${pump['Výkon (W)']} W`);
+        }
+        if (pump['Max. ponor (m)']) {
+            specs.push(`Max. ponor: ${pump['Max. ponor (m)']} m`);
+        }
+        if (pump['Záruka (let)']) {
+            specs.push(`Záruka: ${pump['Záruka (let)']} let`);
         }
         
         return specs.join(' | ');
@@ -1371,6 +2088,24 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         this.productGenerator.initializeSelection(this.productContainer);
     }
 
+    // Metoda pro přidání do košíku s ID příslušenství
+    addToCart(productCode) {
+        const product = this.pumpsData.find(pump => pump.Kód === productCode);
+        if (!product) return;
+    
+        const accessories = [];
+        if (product.PříslušenstvíID1) accessories.push(product.PříslušenstvíID1);
+        if (product.PříslušenstvíID2) accessories.push(product.PříslušenstvíID2);
+        if (product.PříslušenstvíID3) accessories.push(product.PříslušenstvíID3);
+    
+        window.destovkaCart.destAddItem(6, productCode, 1, {
+            type: 'pump',
+            accessories: accessories,
+            name: product.Název,
+            specs: this.formatPumpSpecs(product)
+        });
+    }
+
     handleError() {
         if (this.container) {
             this.container.innerHTML = `
@@ -1381,6 +2116,120 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                     </button>
                 </div>`;
         }
+    }
+}
+
+class DestovkaPumpAccessoryManager extends DestovkaBaseProductManager {
+    constructor() {
+        super(7); // krok 7
+        this.accessoryData = [];
+        this.init();
+    }
+
+    async init() {
+        try {
+            await Promise.all([
+                this.loadAccessoryData(),
+                this.loadXMLFeed()
+            ]);
+            this.initProductContainer();
+            this.updateDisplay();
+        } catch (error) {
+            console.error('Chyba při inicializaci PumpAccessoryManager:', error);
+            this.handleError();
+        }
+    }
+
+    async loadAccessoryData() {
+        try {
+            const response = await fetch('jsony/prislusenstvi_cerpadla.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            this.accessoryData = await response.json();
+        } catch (error) {
+            console.error('Chyba při načítání dat příslušenství:', error);
+            throw error;
+        }
+    }
+
+    getCompatibleAccessories() {
+        console.group('Debugging příslušenství čerpadel');
+        
+        // 1. Kontrola vybraného čerpadla
+        const selectedPump = window.destovkaCart?.destGetItemsByStep(6)[0];
+        console.log('Vybrané čerpadlo:', selectedPump);
+
+        if (!selectedPump) {
+            console.warn('Žádné čerpadlo není vybráno');
+            console.groupEnd();
+            return [];
+        }
+
+        // 2. Kontrola metadat a accessories
+        console.log('Metadata čerpadla:', selectedPump.metadata);
+        console.log('ID příslušenství:', selectedPump.metadata?.accessories);
+
+        if (!selectedPump.metadata?.accessories?.length) {
+            console.warn('Čerpadlo nemá žádné ID příslušenství');
+            console.groupEnd();
+            return [];
+        }
+
+        // 3. Kontrola načtených dat příslušenství
+        console.log('Načtená data příslušenství:', this.accessoryData);
+
+        // 4. Filtrování příslušenství
+        const compatibleAccessories = this.accessoryData.filter(accessory => {
+            const isCompatible = selectedPump.metadata.accessories.includes(accessory['Číslo ID']);
+            console.log(
+                `Kontrola příslušenství: ${accessory.Název}`,
+                `ID: ${accessory['Číslo ID']}`,
+                `Je kompatibilní: ${isCompatible}`
+            );
+            return isCompatible;
+        });
+
+        console.log('Nalezené kompatibilní příslušenství:', compatibleAccessories);
+        console.groupEnd();
+
+        return compatibleAccessories;
+    }
+
+    updateDisplay() {
+        if (!this.productContainer) return;
+
+        // Získat kompatibilní příslušenství
+        const compatibleAccessories = this.getCompatibleAccessories();
+        
+        if (!compatibleAccessories || compatibleAccessories.length === 0) {
+            this.showNoResults('Pro vybrané čerpadlo není dostupné žádné příslušenství');
+            return;
+        }
+
+        this.productContainer.innerHTML = '';
+        
+        compatibleAccessories.forEach(accessory => {
+            const feedData = this.getFeedDataForProduct(accessory.Kód);
+            const productHtml = this.productGenerator.createProductItem(accessory, feedData);
+            this.productContainer.innerHTML += productHtml;
+        });
+
+        // Přidáme prázdný produkt (možnost bez příslušenství)
+        const emptyProductHtml = this.productGenerator.createEmptyProductItem();
+        this.productContainer.innerHTML += emptyProductHtml;
+
+        this.productGenerator.initializeSelection(this.productContainer);
+    }
+
+    addToCart(productCode, quantity = 1) {
+        const accessory = this.accessoryData.find(acc => acc.Kód === productCode);
+        if (!accessory) return;
+
+        window.destovkaCart.destAddItem(7, productCode, quantity, {
+            type: 'pump-accessory',
+            name: accessory.Název
+        });
     }
 }
 
@@ -1746,6 +2595,544 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
             }
         });
         return selectedProducts;
+    }
+}
+
+class VsakovaciCalculator {
+    constructor(formData) {
+        this.volume = parseInt(formData.get('volume'));
+        this.soil = formData.get('soil');
+        this.soilCoefficients = {
+            'gravel': 0.0001,
+            'sand': 0.00001,
+            'soil': 0.000001,
+            'clay': 0.0000001
+        };
+    }
+
+    getCoefficient() {
+        const coefficientMap = {
+            'gravel': 0.0001,
+            'sand': 0.00001,
+            'soil': 0.000001,
+            'clay': 0.0000001
+        };
+        return coefficientMap[this.soil] || 0.0000001; // default to clay if unknown
+    }
+
+    calculateMinArea() {
+        return 0.1 * this.volume / 673 / 0.9 / 0.95 / 28 * 365;
+    }
+
+    calculateMinVolume() {
+        const minArea = this.calculateMinArea();
+        const coef = this.getCoefficient();
+        return (673 / 1000 * (this.volume / 673 / 0.9 / 0.95 / 28 * 365)) - 
+               (1 / 2 * coef * minArea * 4320 * 60);
+    }
+}
+
+class DestovkaVsakovaciManager {
+    constructor() {
+        this.container = document.getElementById('destovka-step11');
+        this.productGenerator = window.productStructureGenerator;
+        this.feedData = new Map();
+        this.selectedCategory = null;
+        this.categories = [
+            'Vsakovací jímka',
+            'Vsakovací tunel',
+            'Vsakovací box',
+            'žádné'
+        ];
+        this.vsakovaciJimkaCodes = ['RUR500', 'RUR1000', 'RUR-RUE400', 'RUR-RUA'];
+        this.vsakovaciTunelCodes = ['231004', '230010', '231005', '3754322'];
+        this.init();
+        this.calculator = new VsakovaciCalculator(window.destovkaStepManager?.formData || new Map());
+    }
+
+    async init() {
+        try {
+            await this.loadXMLFeed();
+            this.initializeContainers();
+            this.showCategories();
+        } catch (error) {
+            console.error('Chyba při inicializaci VsakManager:', error);
+            this.handleError();
+        }
+    }
+
+    async loadXMLFeed() {
+        const response = await fetch('google.xml');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const text = await response.text();
+        const xml = new DOMParser().parseFromString(text, 'text/xml');
+        
+        const entries = xml.getElementsByTagName('entry');
+        for (const entry of entries) {
+            const productData = {
+                id: this.getElementText(entry, 'g:id'),
+                title: this.getElementText(entry, 'title'),
+                price: this.getElementText(entry, 'g:price'),
+                availability: this.getElementText(entry, 'g:availability'),
+                imageLink: this.getElementText(entry, 'g:image_link'),
+                link: this.getElementText(entry, 'link')
+            };
+            
+            if (!productData.id) continue;
+            this.feedData.set(productData.id, productData);
+        }
+    }
+
+    getElementText(parent, tagName) {
+        const element = parent.getElementsByTagName(tagName)[0];
+        return element ? element.textContent : '';
+    }
+
+    initializeContainers() {
+        let categoriesContainer = this.container.querySelector('.destovka-categories-container');
+        if (!categoriesContainer) {
+            categoriesContainer = document.createElement('div');
+            categoriesContainer.className = 'destovka-categories-container destovka-products-container';
+            const heading = this.container.querySelector('h1');
+            if (heading) {
+                heading.insertAdjacentElement('afterend', categoriesContainer);
+            }
+        }
+        this.categoriesContainer = categoriesContainer;
+
+        let productsContainer = this.container.querySelector('.destovka-products-container:not(.destovka-categories-container)');
+        if (!productsContainer) {
+            productsContainer = document.createElement('div');
+            productsContainer.className = 'destovka-products-container';
+            this.categoriesContainer.insertAdjacentElement('afterend', productsContainer);
+        }
+        this.productContainer = productsContainer;
+    }
+
+    getSelectedProducts() {
+        const selectedCard = this.productContainer?.querySelector('.destovka-product-selected');
+        if (!selectedCard) return [];
+    
+        const code = selectedCard.dataset.productCode;
+        if (!code) return [];
+    
+        return [{
+            code: code,
+            quantity: 1,
+            type: this.selectedCategory
+        }];
+    }
+
+    showCategories() {
+        if (!this.categoriesContainer) return;
+    
+        // Reset containers
+        this.productContainer.innerHTML = '';
+        this.categoriesContainer.innerHTML = '';
+        
+        // Reset display
+        this.productContainer.style.display = 'none';
+        this.categoriesContainer.style.display = 'flex';
+    
+        // Remove back button if exists
+        const backButton = this.container.querySelector('.destovka-back-to-categories');
+        if (backButton) {
+            backButton.remove();
+        }
+    
+        const categoryImages = {
+            'Vsakovací jímka': 'img/vsakovaci_jimka.png',
+            'Vsakovací tunel': 'img/vsakovaci_tunel.png',
+            'Vsakovací box': 'img/vsakovaci_box.png',
+            'žádné': 'img/delete.png'
+        };
+    
+        this.categories.forEach(category => {
+            const categoryHtml = this.productGenerator.createCategoryItem(
+                category, 
+                categoryImages[category]
+            );
+            this.categoriesContainer.innerHTML += categoryHtml;
+        });
+    
+        this.productGenerator.initializeCategorySelection(
+            this.categoriesContainer, 
+            (category) => this.handleCategorySelection(category)
+        );
+    }
+
+    handleCategorySelection(category) {
+        this.selectedCategory = category;
+        
+        if (category === 'žádné') {
+            this.categoriesContainer.style.display = 'none';
+            this.productContainer.style.display = 'flex';
+            this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
+        } else {
+            this.categoriesContainer.style.display = 'none';
+            this.productContainer.style.display = 'flex';
+            this.updateDisplay();
+        }
+    
+        if (!this.container.querySelector('.destovka-back-to-categories')) {
+            const backButton = document.createElement('button');
+            backButton.className = 'destovka-back-to-categories';
+            backButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Zpět na výběr kategorií
+            `;
+            backButton.addEventListener('click', () => {
+                // Reset display properites
+                this.categoriesContainer.style.display = 'flex';
+                this.productContainer.style.display = 'none';
+                this.productContainer.innerHTML = '';  // Clear products
+                
+                // Remove back button
+                backButton.remove();
+                
+                // Show categories again
+                this.showCategories();
+            });
+            this.productContainer.insertAdjacentElement('beforebegin', backButton);
+        }
+    }
+
+
+
+    getProductsFromXML() {
+        let productCodes = [];
+        switch (this.selectedCategory) {
+            case 'Vsakovací jímka':
+                productCodes = this.vsakovaciJimkaCodes;
+                break;
+            case 'Vsakovací tunel':
+                productCodes = this.vsakovaciTunelCodes;
+                break;
+            case 'Vsakovací box':
+                // Simulace 5 stejných boxů
+                productCodes = Array(5).fill('1042-40M');
+                break;
+            case 'žádné':
+                return [];
+            default:
+                return [];
+        }
+    
+        return productCodes.map(code => {
+            const feedData = this.feedData.get(code);
+            if (!feedData) return null;
+    
+            return {
+                'Kód': code,
+                'Produkt': feedData.title,
+                'Typ': this.selectedCategory
+            };
+        }).filter(product => product !== null);
+    }
+
+    updateDisplay() {
+        if (!this.productContainer) return;
+    
+        // Vypočítáme minimální hodnoty stejné pro všechny kategorie
+        const minArea = this.calculator.calculateMinArea();
+        const minVolume = this.calculator.calculateMinVolume();
+        const infoBox = this.productGenerator.createVsakInfoBox(minArea, minVolume);
+        
+        const products = this.getProductsFromXML();
+        
+        if (!products || products.length === 0) {
+            this.showNoResults();
+            return;
+        }
+    
+        if (this.selectedCategory === 'Vsakovací box') {
+            this.productContainer.innerHTML = `
+                ${infoBox}
+                <div class="destovka-vsakbox-container">
+                    <div class="destovka-vsakbox-grid-section">
+                        ${this.productGenerator.createVsakBoxGrid()}
+                    </div>
+                    <div class="destovka-vsakbox-products">
+                        ${products.map(product => {
+                            const feedData = this.getFeedDataForProduct(product.Kód);
+                            return this.productGenerator.createVsakBoxProductItem(product, feedData);
+                        }).join('')}
+                        <div class="destovka-vsakbox-total">
+                            celkem <span class="destovka-vsakbox-total-price">0 Kč</span> vč. DPH
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            this.initializeVsakBoxGridControls();
+            this.initializeVsakBoxCounters();
+            this.updateGridVisualization();
+            
+        } else if (this.selectedCategory === 'Vsakovací jímka' || this.selectedCategory === 'Vsakovací tunel') {
+            this.productContainer.innerHTML = `
+                ${infoBox}
+                <div class="destovka-products-container">
+                    ${products.map(product => {
+                        const feedData = this.getFeedDataForProduct(product.Kód);
+                        return this.productGenerator.createVsakProductItem(product, feedData);
+                    }).join('')}
+                </div>
+                <div class="destovka-product-potrubi-total-container">
+                    <div class="destovka-product-potrubi-total">
+                        Celková cena: <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
+                    </div>
+                </div>
+            `;
+            this.initializeCounters();
+            
+        } else if (this.selectedCategory === 'žádné') {
+            this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
+        }
+    
+        // Odstranit tlačítko zpět pokud existuje a kategorie je 'žádné'
+        if (this.selectedCategory === 'žádné') {
+            const backButton = this.container.querySelector('.destovka-back-to-categories');
+            if (backButton) {
+                backButton.remove();
+            }
+            this.categoriesContainer.style.display = 'flex';
+        }
+    
+        // Inicializovat tlačítko zpět, pokud není kategorie 'žádné'
+        if (this.selectedCategory !== 'žádné' && !this.container.querySelector('.destovka-back-to-categories')) {
+            const backButton = document.createElement('button');
+            backButton.className = 'destovka-back-to-categories';
+            backButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Zpět na výběr kategorií
+            `;
+            backButton.addEventListener('click', () => this.showCategories());
+            this.productContainer.insertAdjacentElement('beforebegin', backButton);
+        }
+    
+        if (this.selectedCategory === 'žádné') {
+            this.categoriesContainer.style.display = 'flex';
+        }
+    }
+
+    initializeVsakBoxGridControls() {
+        const controls = this.container.querySelectorAll('.destovka-vsakbox-counter');
+        
+        controls.forEach(control => {
+            const input = control.querySelector('.destovka-vsakbox-input');
+            const minusBtn = control.querySelector('.destovka-vsakbox-minus');
+            const plusBtn = control.querySelector('.destovka-vsakbox-plus');
+            
+            // Přidám logování pro debugování
+            console.log('Initializing control:', {
+                dimension: input.dataset.dimension,
+                min: input.min,
+                max: input.max,
+                currentValue: input.value
+            });
+    
+            const updateGrid = () => {
+                const dimension = input.dataset.dimension;
+                const value = parseInt(input.value);
+                const measureSpan = control.parentElement.querySelector('.destovka-vsakbox-measure');
+                
+                // Kontrola platnosti hodnoty
+                if (isNaN(value)) return;
+    
+                // Aktualizace zobrazení měr
+                if (dimension === 'height') {
+                    measureSpan.textContent = `${(value * 0.4).toFixed(1)} m`;
+                } else {
+                    measureSpan.textContent = `${(value * 0.6).toFixed(1)} m`;
+                }
+                
+                this.updateGridVisualization();
+            };
+    
+            plusBtn.addEventListener('click', () => {
+                const currentValue = parseInt(input.value);
+                const maxValue = parseInt(input.max);
+                
+                // Přidám logování pro debugování
+                console.log('Plus clicked:', {
+                    currentValue,
+                    maxValue,
+                    dimension: input.dataset.dimension
+                });
+    
+                if (currentValue < maxValue) {
+                    input.value = currentValue + 1;
+                    updateGrid();
+                }
+            });
+    
+            minusBtn.addEventListener('click', () => {
+                const currentValue = parseInt(input.value);
+                const minValue = parseInt(input.min);
+                
+                if (currentValue > minValue) {
+                    input.value = currentValue - 1;
+                    updateGrid();
+                }
+            });
+    
+            input.addEventListener('change', (e) => {
+                let value = parseInt(input.value);
+                const minValue = parseInt(input.min);
+                const maxValue = parseInt(input.max);
+                
+                // Ošetření hodnoty
+                if (isNaN(value)) value = minValue;
+                value = Math.max(minValue, Math.min(maxValue, value));
+                
+                input.value = value;
+                updateGrid();
+            });
+    
+            // Inicializace počátečního stavu
+            updateGrid();
+        });
+    }
+    
+    updateGridVisualization() {
+        const length = parseInt(this.container.querySelector('[data-dimension="length"]').value);
+        const width = parseInt(this.container.querySelector('[data-dimension="width"]').value);
+        const height = parseInt(this.container.querySelector('[data-dimension="height"]').value);
+    
+        // Update main grid
+        const cells = this.container.querySelectorAll('.destovka-vsakbox-grid .destovka-vsakbox-grid-cell');
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / 10);
+            const col = index % 10;
+            cell.classList.toggle('active', row < width && col < length);
+        });
+    
+        // Update height visualization
+        const heightCells = this.container.querySelectorAll('.destovka-vsakbox-height-grid .destovka-vsakbox-grid-cell');
+        heightCells.forEach((cell, index) => {
+            cell.classList.toggle('active', index < height);
+        });
+    }
+
+    initializeVsakBoxCounters() {
+        const inputs = this.productContainer.querySelectorAll('.destovka-vsakbox-product-input');
+        inputs.forEach(input => {
+            input.addEventListener('change', () => {
+                if (input.value < 0) input.value = 0;
+                this.updateVsakBoxTotal();
+            });
+        });
+    }
+    
+    updateVsakBoxTotal() {
+        let total = 0;
+        const inputs = this.productContainer.querySelectorAll('.destovka-vsakbox-product-input');
+        inputs.forEach(input => {
+            const code = input.dataset.code;
+            const quantity = parseInt(input.value) || 0;
+            const feedData = this.getFeedDataForProduct(code);
+            const price = this.extractPrice(feedData?.price || '0');
+            total += price * quantity;
+        });
+    
+        const totalElement = this.productContainer.querySelector('.destovka-vsakbox-total-price');
+        if (totalElement) {
+            totalElement.textContent = `${total.toLocaleString('cs-CZ')} Kč`;
+        }
+    }
+
+    initializeCounters() {
+        const container = this.productContainer;
+        if (!container) return;
+    
+        container.querySelectorAll('.destovka-product-potrubi-card-input-container').forEach(inputContainer => {
+            const input = inputContainer.querySelector('input');
+            const decreaseBtn = inputContainer.querySelector('.destovka-decrease-quantity');
+            const increaseBtn = inputContainer.querySelector('.destovka-increase-quantity');
+    
+            if (!input || !decreaseBtn || !increaseBtn) return;
+    
+            decreaseBtn.addEventListener('click', () => {
+                const currentValue = parseInt(input.value) || 0;
+                if (currentValue > 0) {
+                    input.value = currentValue - 1;
+                    this.updateTotalPrice();
+                }
+            });
+    
+            increaseBtn.addEventListener('click', () => {
+                const currentValue = parseInt(input.value) || 0;
+                input.value = currentValue + 1;
+                this.updateTotalPrice();
+            });
+    
+            input.addEventListener('change', () => {
+                let value = parseInt(input.value) || 0;
+                if (value < 0) value = 0;
+                input.value = value;
+                this.updateTotalPrice();
+            });
+        });
+    }
+    
+    updateTotalPrice() {
+        const container = this.productContainer;
+        if (!container) return;
+    
+        let totalPrice = 0;
+        container.querySelectorAll('.destovka-product-potrubi-card-input').forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            const code = input.dataset.code;
+            const feedData = this.feedData.get(code);
+            const price = this.extractPrice(feedData?.price || '0');
+            totalPrice += quantity * price;
+        });
+    
+        const totalPriceElement = container.querySelector('.destovka-product-potrubi-total-price');
+        if (totalPriceElement) {
+            totalPriceElement.textContent = `${totalPrice.toLocaleString('cs-CZ')} Kč vč. DPH`;
+        }
+    }
+    
+    extractPrice(priceString) {
+        if (!priceString) return 0;
+        return parseInt(priceString.replace(/[^0-9]/g, ''));
+    }
+
+    getFeedDataForProduct(code) {
+        return this.feedData.get(code) || {
+            price: 'Cena na dotaz',
+            availability: 'out of stock',
+            imageLink: 'img/delete.png',
+            link: '#'
+        };
+    }
+
+    showNoResults(message = 'Nebyly nalezeny žádné produkty') {
+        this.productContainer.innerHTML = `
+            <div class="destovka-no-results">
+                <div class="destovka-no-results-content">
+                    <h3>${message}</h3>
+                </div>
+            </div>`;
+    }
+
+    handleError() {
+        if (this.container) {
+            this.container.innerHTML = `
+                <div class="destovka-error-message">
+                    <p>Omlouváme se, ale došlo k chybě při načítání dat vsakovacích prvků.</p>
+                    <button onclick="window.destovkaVsakManager = new DestovkaVsakManager()">
+                        Zkusit znovu
+                    </button>
+                </div>`;
+        }
     }
 }
 
