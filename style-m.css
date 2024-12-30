@@ -116,6 +116,10 @@
     .destovka-potrubi-columns-container {
         flex-direction: column;
     }
+
+    #destovka-distance-group {
+        max-width: 100%;
+    }
   }
 
 
