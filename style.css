@@ -689,7 +689,7 @@ body {
 }
 
 .destovka-product-card {
-    width: fit-content;
+    width: 280px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -698,6 +698,11 @@ body {
     border: 2px solid var(--destovka-border-color);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1);    
+}
+.destovka-product-image {
+    height: 180px;
+    max-width: 100%;
+    object-fit: contain;
 }
 .destovka-product-title {
     font-size: 18px;

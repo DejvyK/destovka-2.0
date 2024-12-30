@@ -10,10 +10,10 @@ class ProductStructureGenerator {
         return `
             <div class="destovka-product-card" data-product-code="${data['Kód']}">
                 <div>
-                    <img src="${imageUrl}" 
+                    <img class="destovka-product-image"    
+                         src="${imageUrl}" 
                          alt="${data['Produkt']}"
-                         onerror="this.src='img/delete.png'"
-                         style="max-width: 200px; max-height: 300px"/>
+                         onerror="this.src='img/delete.png'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column;">
                     <div class="destovka-product-title">
@@ -91,10 +91,10 @@ class ProductStructureGenerator {
         return `
             <div class="destovka-product-card">
                 <div>
-                    <img src="${feedData.imageLink}" 
+                    <img class="destovka-product-image"
+                         src="${feedData.imageLink}" 
                          alt="${data.Produkt}"
-                         onerror="this.src='/api/placeholder/200/200'"
-                         style="max-width: 200px" />
+                         onerror="this.src='/api/placeholder/200/200'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column;">
                     <div class="destovka-product-title">
@@ -393,7 +393,7 @@ formatAvailability(availability) {
         return `
             <div class="destovka-product-card">
                 <div>
-                    <img src="img/delete.png" style="max-width: 200px"/>
+                    <img class="destovka-product-image" src="img/delete.png" />
                 </div>
                 <div class="destovka-product-title">
                     żádná
@@ -409,12 +409,12 @@ formatAvailability(availability) {
 
     createCategoryItem(category, imageUrl = '/api/placeholder/200/200') {
         return `
-            <div class="destovka-product-card" data-category="${category}" style="width: 280px;">
+            <div class="destovka-product-card" data-category="${category}">
                 <div>
-                    <img src="${imageUrl}" 
+                    <img class="destovka-product-image"
+                         src="${imageUrl}" 
                          alt="${category}"
-                         onerror="this.src='/api/placeholder/200/200'"
-                         style="width: 200px; height: 200px; object-fit: contain;"/>
+                         onerror="this.src='/api/placeholder/200/200'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column; min-height: 90px; justify-content: center;">
                     <div class="destovka-product-title">
