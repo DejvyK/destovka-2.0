@@ -21,6 +21,7 @@ class ProductStructureGenerator {
                     </div>
                     <div class="destovka-product-code">kód ${data['Kód']}</div>
                 </div>
+                ${this.createProductSpecs(data)}
                 <div class="destovka-product-card-footer">
                     <div class="destovka-product-price">
                         ${this.formatPrice(feedData?.price || 'Cena na dotaz')}
@@ -28,7 +29,6 @@ class ProductStructureGenerator {
                     <button class="destovka-product-select-button">
                         Vybrat
                     </button>
-                    ${this.createProductSpecs(data)}
                 </div>
             </div>
         `;
@@ -383,7 +383,7 @@ formatAvailability(availability) {
         return `
             <div class="destovka-product-specs">
                 ${validSpecs.map(field => `
-                    <div class="destovka-product-spec">${field}: ${data[field]}</div>
+                    <div class="destovka-product-spec">${field}: <span class="destovka-product-spec-value">${data[field]}</span></div>
                 `).join('')}
             </div>
         `;
