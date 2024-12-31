@@ -600,7 +600,7 @@ class DestovkaTankManager {
         return this.feedData.get(tankCode) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: '/api/placeholder/200/200',
+            imageLink: 'img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -674,7 +674,7 @@ class DestovkaTankManager {
                     <div class="destovka-tank-main">
                         <img src="${feedData.imageLink}" 
                              alt="${data['Typ nádrže']} ${data['Objemové označení']}"
-                             onerror="this.src='/api/placeholder/200/200'" />
+                             onerror="this.src='img/radoby_placeholder.png'" />
                     </div>
                 </div>
                 <div class="destovka-tank-info">
@@ -1158,7 +1158,7 @@ class DestovkaAccessoriesManager {
         return this.feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: '/api/placeholder/200/200',
+            imageLink: 'img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -1774,7 +1774,7 @@ class DestovkaFiltrationManager {
         return this.feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: '/api/placeholder/200/200',
+            imageLink: 'img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -2480,7 +2480,7 @@ class DestovkaGeigeryManager extends DestovkaBaseProductManager {
         return this.feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: '/api/placeholder/200/200',
+            imageLink: 'img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -3257,126 +3257,156 @@ class DestovkaCartDisplayManager {
         this.feedData = new Map();
         this.init();
     }
-
+ 
     async init() {
         if (!this.container) return;
-        await this.loadXMLFeed();
-        this.cartItems = window.destovkaCart?.destGetAllItems() || [];
-        this.renderCart();
-    }
-
-    async loadXMLFeed() {
-        const response = await fetch('google.xml');
-        const text = await response.text();
-        const xml = new DOMParser().parseFromString(text, 'text/xml');
-        
-        const entries = xml.getElementsByTagName('entry');
-        for (const entry of entries) {
-            const productData = {
-                id: this.getElementText(entry, 'g:id'),
-                title: this.getElementText(entry, 'title'),
-                price: this.getElementText(entry, 'g:price'),
-                imageLink: this.getElementText(entry, 'g:image_link')
-            };
-            if (!productData.id) continue;
-            this.feedData.set(productData.id, productData);
+        try {
+            await this.loadXMLFeed();
+            this.cartItems = window.destovkaCart?.destGetAllItems() || [];
+            this.renderCart();
+            this.initializeEventListeners();
+        } catch (error) {
+            console.error('Chyba při inicializaci košíku:', error);
+            this.renderError();
         }
     }
-
-    renderCart() {
-        const cartContent = document.createElement('div');
-        cartContent.className = 'destovka-cart-content';
-        
-        // Seskupení podle kroků
-        const groupedItems = this.cartItems.reduce((acc, item) => {
+ 
+    async loadXMLFeed() {
+        try {
+            const response = await fetch('google.xml');
+            if (!response.ok) throw new Error('Failed to fetch XML feed');
+            
+            const text = await response.text();
+            const xml = new DOMParser().parseFromString(text, 'text/xml');
+            
+            if (xml.getElementsByTagName('parsererror').length > 0) {
+                throw new Error('XML parsing error');
+            }
+            
+            const entries = xml.getElementsByTagName('entry');
+            for (const entry of entries) {
+                const productData = {
+                    id: this.getElementText(entry, 'g:id'),
+                    title: this.getElementText(entry, 'title'),
+                    price: this.getElementText(entry, 'g:price'),
+                    imageLink: this.getElementText(entry, 'g:image_link')
+                };
+                if (!productData.id) continue;
+                this.feedData.set(productData.id, productData);
+            }
+        } catch (error) {
+            console.error('Chyba při načítání XML feedu:', error);
+            throw error;
+        }
+    }
+ 
+    initializeEventListeners() {
+        this.container.addEventListener('click', (e) => {
+            const removeButton = e.target.closest('.destovka-cart-card-remove-button');
+            if (removeButton) {
+                const productCode = removeButton.dataset.productCode;
+                if (productCode) {
+                    window.destovkaCart.destRemoveItem(productCode);
+                    this.cartItems = window.destovkaCart?.destGetAllItems() || [];
+                    this.renderCart();
+                }
+            }
+        });
+    }
+ 
+    groupItemsByStep() {
+        return this.cartItems.reduce((acc, item) => {
             const stepTitle = this.getStepTitle(item.step);
             if (!acc[stepTitle]) acc[stepTitle] = [];
             acc[stepTitle].push(item);
             return acc;
         }, {});
-    
-        // Render sekcí
+    }
+ 
+    renderCart() {
+        if (!this.cartItems.length) {
+            this.renderEmptyCart();
+            return;
+        }
+ 
+        const cartContent = document.createElement('div');
+        cartContent.className = 'destovka-cart-content';
+        
+        const groupedItems = this.groupItemsByStep();
+        
         Object.entries(groupedItems).forEach(([title, items]) => {
             const itemsHtml = items.map(item => {
                 const feedData = this.feedData.get(item.productCode);
                 return this.cartGenerator.createCartItem({
+                    ...item,
                     name: feedData?.title || item.name,
-                    imageUrl: feedData?.imageLink,
-                    price: feedData?.price,
-                    quantity: item.quantity
+                    imageUrl: feedData?.imageLink || 'img/radoby_placeholder.png',
+                    price: this.extractPrice(feedData?.price || item.price),
+                    productCode: item.productCode
                 });
             }).join('');
-    
-            cartContent.innerHTML += this.cartGenerator.createCartSection(title, itemsHtml);
+ 
+            cartContent.innerHTML += this.cartGenerator.createCartSection(
+                title, 
+                itemsHtml, 
+                items.length
+            );
         });
-    
-        // Přidání sumáře
-        cartContent.innerHTML += this.cartGenerator.createCartTotalItem();
+        
+        const totals = this.calculateTotals();
+        cartContent.innerHTML += this.cartGenerator.createCartTotalItem(
+            totals.totalItems,
+            totals.totalPrice
+        );
         
         this.container.innerHTML = '<h1>Konečný seznam vybraných položek</h1>';
         this.container.appendChild(cartContent);
-        this.updateTotals();
     }
-
-    initializeItemControls(itemElement, item) {
-        const removeButton = itemElement.querySelector('.destovka-cart-card-remove-button');
-        if (removeButton) {
-            removeButton.addEventListener('click', () => {
-                window.destovkaCart.destRemoveItem(item.productCode);
-                this.renderCart();
-            });
-        }
+ 
+    renderEmptyCart() {
+        this.container.innerHTML = `
+            <h1>Konečný seznam vybraných položek</h1>
+            <div class="destovka-cart-empty">
+                <p>Váš košík je prázdný</p>
+            </div>
+        `;
     }
-
+ 
+    renderError() {
+        this.container.innerHTML = `
+            <h1>Konečný seznam vybraných položek</h1>
+            <div class="destovka-cart-error">
+                <p>Při načítání košíku došlo k chybě. Prosím zkuste to znovu později.</p>
+                <button class="destovka-button destovka-button-back" onclick="window.destovkaCartDisplay = new DestovkaCartDisplayManager()">
+                    Zkusit znovu
+                </button>
+            </div>
+        `;
+    }
+ 
     getElementText(parent, tagName) {
         const element = parent.getElementsByTagName(tagName)[0];
         return element ? element.textContent : '';
     }
-
-    getItemFeedData(productCode) {
-        return window.destovkaTankManager?.feedData.get(productCode) || null;
-    }
-
-    createElementFromHTML(htmlString) {
-        const div = document.createElement('div');
-        div.innerHTML = htmlString.trim();
-        return div.firstChild;
-    }
-
-    extractPrice(priceString) {
-        if (!priceString) return 0;
-        const value = parseInt(priceString.replace(/[^0-9]/g, ''));
-        return isNaN(value) ? 0 : value;
-    }
-
-    updateTotals() {
-        let totalQuantity = 0;
-        let totalPriceWithVat = 0;
-
-        this.cartItems.forEach(item => {
-            const feedData = this.feedData.get(item.productCode);
-            const pricePerItem = this.extractPrice(feedData?.price || '0');
-            totalQuantity += item.quantity;
-            totalPriceWithVat += pricePerItem * item.quantity;
-        });
-
-        const totalPriceWithoutVat = Math.round(totalPriceWithVat / 1.21);
-
-        const totalPriceElement = this.container.querySelector('.destovka-cart-total-price');
-        const totalPriceWithoutVatElement = this.container.querySelector('.destovka-cart-total-price-without-vat');
-        const quantityElement = this.container.querySelector('.destovka-cart-total-wrapper div:first-child');
-
-        if (totalPriceElement) {
-            totalPriceElement.textContent = `${totalPriceWithVat.toLocaleString('cs-CZ')} Kč`;
+ 
+    extractPrice(price) {
+        if (typeof price === 'number') return price;
+        if (typeof price === 'string') {
+            return parseInt(price.replace(/[^0-9]/g, '')) || 0;
         }
-        if (totalPriceWithoutVatElement) {
-            totalPriceWithoutVatElement.textContent = `${totalPriceWithoutVat.toLocaleString('cs-CZ')} Kč`;
-        }
-        if (quantityElement) {
-            quantityElement.textContent = `celkem ${totalQuantity} kusů`;
-        }
+        return 0;
     }
-
+ 
+    calculateTotals() {
+        return this.cartItems.reduce((acc, item) => {
+            const price = this.extractPrice(this.feedData.get(item.productCode)?.price || item.price);
+            return {
+                totalItems: acc.totalItems + item.quantity,
+                totalPrice: acc.totalPrice + (price * item.quantity)
+            };
+        }, { totalItems: 0, totalPrice: 0 });
+    }
+ 
     getStepTitle(step) {
         const titles = {
             2: 'Nádrž',
@@ -3392,7 +3422,7 @@ class DestovkaCartDisplayManager {
         };
         return titles[step] || 'Ostatní';
     }
-}
+ }
 
 // Inicializace manageru při načtení DOMu
 document.addEventListener('DOMContentLoaded', () => {

@@ -803,7 +803,7 @@ class DestovkaAccessoryManager {
         return feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: '/api/placeholder/200/200',
+            imageLink: 'img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -865,7 +865,7 @@ class DestovkaAccessoryManager {
                         <div class="destovka-accessory-item-image">
                             <img src="${feedData.imageLink}" 
                                  alt="${item.Název}"
-                                 onerror="this.src='/api/placeholder/200/200'" />
+                                 onerror="this.src='img/radoby_placeholder.png'" />
                         </div>
                     </div>
                     <div class="destovka-accessory-item-info">

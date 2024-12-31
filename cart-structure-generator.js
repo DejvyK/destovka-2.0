@@ -1,48 +1,64 @@
+// cart-structure-generator.js
 class CartStructureGenerator {
     formatPrice(price) {
-        const [value, currency] = price.split(' ');
-        return `${parseInt(value).toLocaleString('cs-CZ')} Kč`;
+        if (typeof price === 'number') {
+            return price.toLocaleString('cs-CZ');
+        }
+        
+        if (typeof price === 'string') {
+            const value = parseInt(price.replace(/[^0-9]/g, '')) || 0;
+            return value.toLocaleString('cs-CZ');
+        }
+        
+        return '0';
     }
 
-    createCartSection(title, items) {
+    createCartSection(title, items, totalAmount = 0) {
         return `
             <div class="destovka-cart-section">
-                <div class="destovka-cart-section-title">${title}</div>
+                <div class="destovka-cart-section-title">
+                    ${title} (${totalAmount} ${this.getPluralForm(totalAmount, 'položka', 'položky', 'položek')})
+                </div>
                 ${items}
             </div>
         `;
     }
 
-    calculateSumPrice(cartItem) {
-        return cartItem.price * cartItem.quantity;
-    }
-
-    calculateSumPriceWithoutVat(cartItem) {
-        return cartItem.price * cartItem.quantity / 1.21;
+    getPluralForm(count, singular, plural2to4, plural5plus) {
+        if (count === 1) return singular;
+        if (count >= 2 && count <= 4) return plural2to4;
+        return plural5plus;
     }
 
     createCartItem(cartItem) {
+        const basePrice = this.extractPrice(cartItem.price);
+        const totalPriceWithVAT = this.calculateTotalPrice(basePrice, cartItem.quantity);
+        const totalPriceWithoutVAT = this.calculatePriceWithoutVAT(totalPriceWithVAT);
+
         return `
             <div class="destovka-cart-card-container">
-                <img src="${cartItem.imageUrl}" style="max-width: 200px; max-height: 150px" />
+                <img src="${cartItem.imageUrl || 'img/radoby_placeholder.png'}" 
+                     alt="${cartItem.name}"
+                     style="max-width: 200px; max-height: 150px" 
+                     onerror="this.src='img/radoby_placeholder.png'" />
 
                 <div class="destovka-cart-card-info-column">
                     <div class="destovka-cart-card-title">${cartItem.name}</div>
-                    <div>cena za kus ${this.formatPrice(cartItem.price)} Kč vč DPH</div>
+                    <div>cena za kus ${this.formatPrice(basePrice)} Kč vč DPH</div>
                     <div class="destovka-cart-card-pieces">
-                        ${cartItem.quantity} ks
+                        ${cartItem.quantity} ${this.getPluralForm(cartItem.quantity, 'kus', 'kusy', 'kusů')}
                     </div>
                 </div>
 
                 <div class="destovka-cart-card-price-column">
                     <div style="font-weight: 600">
-                        celkem <span class="destovka-cart-card-price">${this.calculateSumPrice(cartItem)} Kč</span> vč DPH
+                        celkem <span class="destovka-cart-card-price">${this.formatPrice(totalPriceWithVAT)} Kč</span> vč DPH
                     </div>
                     <div>
-                        celkem <span class="destovka-cart-card-price">${this.calculateSumPriceWithoutVat(cartItem)} Kč</span> bez DPH
+                        celkem <span class="destovka-cart-card-price">${this.formatPrice(totalPriceWithoutVAT)} Kč</span> bez DPH
                     </div>
                     
-                    <button class="destovka-cart-card-remove-button">
+                    <button class="destovka-cart-card-remove-button" data-product-code="${cartItem.productCode}">
                         Odstranit
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
@@ -51,16 +67,35 @@ class CartStructureGenerator {
                     </button>
                 </div>
             </div>
-        `
+        `;
     }
 
-    createCartTotalItem() {
+    createCartTotalItem(totalItems, totalPriceWithVAT) {
+        const totalPriceWithoutVAT = this.calculatePriceWithoutVAT(totalPriceWithVAT);
+        
         return `
             <div class="destovka-cart-total-wrapper">
-                <div>celkem 1234 kusu</div>
-                <div>celkem <span class="destovka-cart-total-price-without-vat">1234 Kč</span> bez DPH</div>
-                <div style="font-size: 20px">celkem <span class="destovka-cart-total-price">1234 Kč</span> vč DPH</div>            
+                <div>celkem ${totalItems} ${this.getPluralForm(totalItems, 'kus', 'kusy', 'kusů')}</div>
+                <div>celkem <span class="destovka-cart-total-price-without-vat">${this.formatPrice(totalPriceWithoutVAT)} Kč</span> bez DPH</div>
+                <div style="font-size: 20px">celkem <span class="destovka-cart-total-price">${this.formatPrice(totalPriceWithVAT)} Kč</span> vč DPH</div>            
             </div>
-        `
+        `;
+    }
+
+    // Helper metody pro výpočty
+    extractPrice(price) {
+        if (typeof price === 'number') return price;
+        if (typeof price === 'string') {
+            return parseInt(price.replace(/[^0-9]/g, '')) || 0;
+        }
+        return 0;
+    }
+
+    calculateTotalPrice(price, quantity) {
+        return price * quantity;
+    }
+
+    calculatePriceWithoutVAT(priceWithVAT) {
+        return Math.round(priceWithVAT / 1.21);
     }
 }

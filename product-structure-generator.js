@@ -5,7 +5,7 @@ class ProductStructureGenerator {
     }
     
     createProductItem(data, feedData) {
-        const imageUrl = (feedData && feedData.imageLink) ? feedData.imageLink : '/api/placeholder/200/200';
+        const imageUrl = (feedData && feedData.imageLink) ? feedData.imageLink : 'img/radoby_placeholder.png';
         
         return `
             <div class="destovka-product-card" data-product-code="${data['Kód']}">
@@ -94,7 +94,7 @@ class ProductStructureGenerator {
                     <img class="destovka-product-image"
                          src="${feedData.imageLink}" 
                          alt="${data.Produkt}"
-                         onerror="this.src='/api/placeholder/200/200'" />
+                         onerror="this.src='img/radoby_placeholder.png'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column;">
                     <div class="destovka-product-title">
@@ -139,7 +139,7 @@ class ProductStructureGenerator {
                     <div class="destovka-vsakbox-product-image">
                         <img src="${feedData.imageLink}" 
                              alt="${data.Produkt}"
-                             onerror="this.src='/api/placeholder/200/200'"/>
+                             onerror="this.src='img/radoby_placeholder.png'"/>
                     </div>
                     <div class="destovka-vsakbox-product-info">
                         <div class="destovka-vsakbox-product-title">${data.Produkt}</div>
@@ -407,14 +407,14 @@ formatAvailability(availability) {
         `
     }
 
-    createCategoryItem(category, imageUrl = '/api/placeholder/200/200') {
+    createCategoryItem(category, imageUrl = 'img/radoby_placeholder.png') {
         return `
             <div class="destovka-product-card" data-category="${category}">
                 <div>
                     <img class="destovka-product-image"
                          src="${imageUrl}" 
                          alt="${category}"
-                         onerror="this.src='/api/placeholder/200/200'" />
+                         onerror="this.src='img/radoby_placeholder.png'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column; min-height: 90px; justify-content: center;">
                     <div class="destovka-product-title">

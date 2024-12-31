@@ -1363,3 +1363,176 @@ body {
     font-weight: 600;
     color: var(--destovka-text-color);
 }
+
+.destovka-products-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#destovka-step3 .destovka-products-container {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+}
+
+
+/* Cart Content Container */
+.destovka-cart-content {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    width: 85%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 24px 0;
+}
+
+/* Cart Section */
+.destovka-cart-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--destovka-border-color);
+}
+
+.destovka-cart-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+}
+
+/* Cart Item Card */
+.destovka-cart-card-container {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+    background: white;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+}
+.destovka-cart-card-container img {
+    min-width: 180px;
+    max-width: 220px;
+    
+}
+
+.destovka-cart-card-info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.destovka-cart-card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+}
+
+.destovka-cart-card-pieces {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: auto;
+    color: var(--destovka-text-color);
+}
+
+.destovka-cart-card-price-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: space-between;
+    min-width: 240px;
+    border-left: 1px solid var(--destovka-border-color);
+    padding-left: 24px;
+}
+
+.destovka-cart-card-price {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--destovka-success);
+}
+
+.destovka-cart-card-remove-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    color: #dc2626;
+    background: white;
+    border: 1px solid #dc2626;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.destovka-cart-card-remove-button:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* Cart Totals */
+.destovka-cart-total-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 16px;
+    padding: 24px;
+    border-top: 1px solid var(--destovka-border-color);
+    font-size: 16px;
+    color: var(--destovka-text-color);
+}
+
+.destovka-cart-total-wrapper > div {
+    padding: 8px 0;
+}
+
+.destovka-cart-total-price {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--destovka-success);
+}
+
+.destovka-cart-total-price-without-vat {
+    font-weight: 500;
+}
+
+/* Empty Cart */
+.destovka-cart-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.destovka-cart-empty p {
+    font-size: 18px;
+    color: var(--destovka-text-color);
+}
+
+/* Error State */
+.destovka-cart-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.destovka-cart-error p {
+    font-size: 18px;
+    color: #dc2626;
+}
+
+/* Images */
+.destovka-cart-card-container img {
+    object-fit: contain;
+    border-radius: 4px;
+}

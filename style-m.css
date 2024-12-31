@@ -135,6 +135,102 @@
     .destovka-cart-section {
         padding: 16px 0;
     }
+
+
+    .destovka-cart-content {
+        gap: 16px;
+        padding: 12px;
+    }
+
+    /* Cart Section */
+    .destovka-cart-section {
+        padding: 12px 0;
+        gap: 12px;
+    }
+
+    /* Cart Item Card */
+    .destovka-cart-card-container {
+        flex-direction: column;
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .destovka-cart-card-container img {
+        max-width: 150px;
+        max-height: 120px;
+        align-self: center;
+    }
+
+    .destovka-cart-card-info-column {
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .destovka-cart-card-title {
+        font-size: 16px;
+    }
+
+    .destovka-cart-card-pieces {
+        font-size: 18px;
+        margin-top: 0;
+    }
+
+    .destovka-cart-card-price-column {
+        width: 100%;
+        min-width: unset;
+        border-left: none;
+        padding-left: 0;
+        align-items: center;
+        border-top: 1px solid var(--destovka-border-color);
+        padding-top: 16px;
+        gap: 12px;
+    }
+
+    .destovka-cart-card-price {
+        font-size: 16px;
+    }
+
+    .destovka-cart-card-remove-button {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    /* Cart Totals */
+    .destovka-cart-total-wrapper {
+        padding: 16px;
+        gap: 12px;
+        font-size: 14px;
+    }
+
+    .destovka-cart-total-wrapper > div {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--destovka-border-color);
+    }
+
+    .destovka-cart-total-wrapper > div:last-child {
+        border-bottom: none;
+    }
+
+    .destovka-cart-total-price {
+        font-size: 18px;
+    }
+
+    /* Empty and Error States */
+    .destovka-cart-empty,
+    .destovka-cart-error {
+        padding: 24px 16px;
+        gap: 16px;
+    }
+
+    .destovka-cart-empty p,
+    .destovka-cart-error p {
+        font-size: 16px;
+    }
   }
 
 
@@ -249,5 +345,30 @@
     }
 }
 
+
+
+
+@media (max-width: 576px) {
+    .destovka-cart-content {
+        padding: 30px;
+    }
+
+    .destovka-cart-card-container {
+        padding: 20px;
+    }
+
+    .destovka-cart-section-title {
+        font-size: 18px;
+    }
+
+    .destovka-cart-total-wrapper {
+        padding: 18px;
+        font-size: 13px;
+    }
+
+    .destovka-cart-total-price {
+        font-size: 18px;
+    }
+}
 
 
