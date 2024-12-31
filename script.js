@@ -4,7 +4,6 @@ class DestovkaStepManager {
     constructor() {
         this.currentStep = 1;
         this.maxSteps = 12;
-        this.isDistanceMode = false;
 
         if (window.destovkaCart) {
             window.destovkaCart.destClear();
@@ -47,29 +46,31 @@ class DestovkaStepManager {
         };
     
         const setDefaultValues = (isDistanceMode) => {
-            if (this.isDistanceMode) {
-                inflowDepthInput.value = '0';
+            if (isDistanceMode) {
+                inflowDepthInput.value = '';
             } else {
                 distanceInput.value = '0.001';
                 updateDepthFromDistance();
             }
         };
     
-        toggleButton.addEventListener('click', () => {            
-            directDepthGroup.querySelector('.destovka-input').classList.toggle('destovka-input-disabled');
-            directDepthGroup.querySelector('.destovka-unit-button').classList.toggle('destovka-input-disabled');
-            distanceGroup.querySelector('.destovka-input').classList.toggle('destovka-input-disabled');
-            distanceGroup.querySelector('.destovka-unit-button').classList.toggle('destovka-input-disabled');
-
-            if (this.isDistanceMode) {                
+        toggleButton.addEventListener('click', () => {
+            // Opravená logika - použijeme display style distanceGroup pro kontrolu
+            const isDistanceMode = distanceGroup.style.display !== 'none';
+            
+            if (isDistanceMode) {
+                // Přepnutí zpět na hloubku nátoku
+                directDepthGroup.style.display = 'flex';
+                distanceGroup.style.display = 'none';
                 toggleButton.textContent = 'Neznám hloubku nátoku';
                 setDefaultValues(false);
-            } else {               
+            } else {
+                // Přepnutí na vzdálenost
+                directDepthGroup.style.display = 'none';
+                distanceGroup.style.display = 'flex';
                 toggleButton.textContent = 'Znám hloubku nátoku';
                 setDefaultValues(true);
             }
-
-            this.isDistanceMode = !this.isDistanceMode;
         });
     
         distanceInput.addEventListener('input', () => {
@@ -100,6 +101,7 @@ class DestovkaStepManager {
         if (step === 1) {
             const errors = [];
             const distanceGroup = document.getElementById('destovka-distance-group');
+            const isDistanceMode = distanceGroup.style.display !== 'none';
             
             const requiredFields = ['volumeRange', 'concrete', 'soil', 'hsvDepth', 'load', 'inflowDiameter', 'outflowDiameter'];
     
@@ -128,7 +130,7 @@ class DestovkaStepManager {
             });
     
             // Validace hloubky nátoku nebo vzdálenosti
-            if (this.isDistanceMode) {
+            if (isDistanceMode) {
                 const distanceInput = document.getElementById('distance');
                 if (distanceInput) {
                     const value = distanceInput.value.trim();
@@ -230,7 +232,9 @@ class DestovkaStepManager {
             const distanceUnitButton = distanceGroup.querySelector('.destovka-unit-button');
             const inflowDepthUnitButton = document.querySelector('#destovka-direct-depth .destovka-unit-button');
          
-            if (this.isDistanceMode && distanceInput.value) {
+            const isDistanceMode = distanceGroup.style.display !== 'none';
+         
+            if (isDistanceMode && distanceInput.value) {
                 const distanceValue = parseFloat(distanceInput.value) || 0;
                 const distanceUnit = distanceUnitButton.getAttribute('data-current-unit');
                 
