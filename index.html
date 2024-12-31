@@ -229,7 +229,7 @@
                             </div>
                         </div>
                         
-                        <div class="destovka-form-group" id="destovka-distance-group">
+                        <div class="destovka-form-group" id="destovka-distance-group" style="display: none;">
                             <div class="destovka-input-wrapper">
                                 <div class="destovka-label-wrapper">
                                     <label class="destovka-label">9. Vzdálenost od domu</label>
@@ -242,13 +242,13 @@
                                 </div>
                                 <div class="destovka-input-row">
                                     <input type="number" 
-                                           class="destovka-input destovka-input-disabled" 
+                                           class="destovka-input" 
                                            id="distance" 
                                            min="0" 
                                            max="1000"
                                            onkeydown="return event.keyCode !== 69 && event.keyCode !== 187" 
                                            oninput="this.value = this.value.replace(/[eE\+\-]/g, '')">
-                                    <button class="destovka-unit-button destovka-input-disabled" data-current-unit="m">m</button>
+                                    <button class="destovka-unit-button" data-current-unit="m">m</button>
                                 </div>
                             </div>
                         </div>

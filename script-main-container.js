@@ -2110,7 +2110,8 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             // Základní obsah karty
             productDiv.innerHTML = `
                 <div>
-                    <img src="${feedData.imageLink}" 
+                    <img class="destovka-product-image"
+                         src="${feedData.imageLink}" 
                          alt="${product.Produkt}"
                          onerror="this.src='img/delete.png'"
                          style="max-width: 200px" />
@@ -2121,6 +2122,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                     </div>
                     <div class="destovka-product-code">kód ${product.Kód}</div>
                 </div>
+                ${this.formatPumpSpecs(product)}
                 <div class="destovka-product-card-footer">
                     <div class="destovka-product-price">
                         ${this.productGenerator.formatPrice(feedData.price)}
@@ -2128,7 +2130,6 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                     <button class="destovka-product-select-button">
                         ${selectedPump?.productCode === product.Kód ? 'Vybráno' : 'Vybrat'}
                     </button>
-                    ${this.formatPumpSpecs(product)}
                 </div>
             `;
     

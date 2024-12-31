@@ -538,10 +538,6 @@ body {
     min-width: 120px;
 }
 
-.destovka-input-disabled {
-    background: #f8fafc;
-    color: var(--destovka-inactive);
-}
 
 
 
@@ -1102,7 +1098,7 @@ body {
 }
 
 .destovka-vsakbox-products {
-    width: 50%;
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
