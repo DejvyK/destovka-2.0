@@ -195,6 +195,10 @@ body {
     min-width: 280px;  
 }
 
+#destovka-distance-group {
+    max-width: calc(50% - 10px);
+}
+
 .destovka-label {
     font-size: 17px;
     color: var(--destovka-inactive);  
