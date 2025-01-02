@@ -279,49 +279,76 @@ class DestovkaStepManager {
         }
     }
 
-     restoreFormData() {
+    convertFromMM(value, targetUnit) {
+        switch(targetUnit) {
+            case 'cm':
+                return value / 10;
+            case 'm':
+                return value / 1000;
+            case 'mm':
+            default:
+                return value;
+        }
+    }
+
+    restoreFormData() {
         if (this.currentStep === 1 && this.formData.size > 0) {
             document.getElementById('volumeRange').value = this.formData.get('volume') || '';
             document.getElementById('concrete').value = this.formData.get('concrete') || '';
             document.getElementById('soil').value = this.formData.get('soil') || '';
-            document.getElementById('hsvDepth').value = this.formData.get('hsvDepth') || '';
             document.getElementById('load').value = this.formData.get('load') || '';
             document.getElementById('inflowDiameter').value = this.formData.get('inflowDiameter') || '';
             document.getElementById('outflowDiameter').value = this.formData.get('outflowDiameter') || '';
-            document.getElementById('inflowDepth').value = this.formData.get('inflowDepth') || '';
-            document.getElementById('distance').value = this.formData.get('distance') || '';
-    
-            // Obnovíme jednotky
-            const distanceUnit = this.formData.get('distanceUnit');
-            if (distanceUnit) {
-                const distanceUnitButton = document.querySelector('#destovka-distance-group .destovka-unit-button');
-                if (distanceUnitButton) {
-                    distanceUnitButton.textContent = distanceUnit;
-                    distanceUnitButton.setAttribute('data-current-unit', distanceUnit);
-                }
+     
+            // HSV hloubka
+            const hsvInput = document.getElementById('hsvDepth');
+            const hsvUnitButton = hsvInput?.closest('.destovka-input-row')?.querySelector('.destovka-unit-button');
+            if (hsvInput && hsvUnitButton) {
+                const currentUnit = hsvUnitButton.getAttribute('data-current-unit') || 'mm';
+                const valueInMM = parseInt(this.formData.get('hsvDepth'));
+                hsvInput.value = this.convertFromMM(valueInMM, currentUnit);
             }
-    
-            // Obnovíme správný mód zobrazení pro hloubku nátoku/vzdálenost
+     
+            // Hloubka nátoku a vzdálenost
+            const distanceGroup = document.getElementById('destovka-distance-group');
+            const directDepthGroup = document.getElementById('destovka-direct-depth');
+            const inflowDepthInput = document.getElementById('inflowDepth');
+            const distanceInput = document.getElementById('distance');
+            const inflowUnitButton = directDepthGroup?.querySelector('.destovka-unit-button');
+            const distanceUnitButton = distanceGroup?.querySelector('.destovka-unit-button');
+     
+            // Obnova režimu zobrazení (hloubka vs. vzdálenost)
             const distance = this.formData.get('distance');
             const toggleButton = document.querySelector('.destovka-toggle-natok');
-            const directDepthGroup = document.getElementById('destovka-direct-depth');
-            const distanceGroup = document.getElementById('destovka-distance-group');
-    
+     
             if (distance) {
                 directDepthGroup.style.display = 'none';
                 distanceGroup.style.display = 'flex';
                 toggleButton.textContent = 'Znám hloubku nátoku';
+                
+                distanceInput.value = distance;
+                if (distanceUnitButton) {
+                    const unit = this.formData.get('distanceUnit') || 'm';
+                    distanceUnitButton.textContent = unit;
+                    distanceUnitButton.setAttribute('data-current-unit', unit);
+                }
             } else {
                 directDepthGroup.style.display = 'flex';
                 distanceGroup.style.display = 'none';
                 toggleButton.textContent = 'Neznám hloubku nátoku';
+                
+                if (inflowDepthInput && inflowUnitButton) {
+                    const currentUnit = inflowUnitButton.getAttribute('data-current-unit') || 'mm';
+                    const valueInMM = parseInt(this.formData.get('inflowDepth'));
+                    inflowDepthInput.value = this.convertFromMM(valueInMM, currentUnit);
+                }
             }
-    
+     
             if (window.volumeRange) {
                 window.volumeRange.updateValue(this.formData.get('volume'));
             }
         }
-    }
+     }
 
     handlePreviousStep() {
         if (this.currentStep > 1) {

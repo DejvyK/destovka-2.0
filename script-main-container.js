@@ -164,7 +164,7 @@ class DestovkaTankFilter {
         
         // Objemová tolerance a kroky
         this.initialVolumeTolerance = 0.1;  // 10%
-        this.maxVolumeTolerance = 0.3;      // 30%
+        this.maxVolumeTolerance = 0.6;      // 30%
         this.volumeToleranceStep = 0.05;    // 5% krok pro navyšování tolerance
         
         // Váhy pro bodování
@@ -177,6 +177,18 @@ class DestovkaTankFilter {
         this.extensionCalculator = null;
         this.accessoryCalculator = null;
 
+        /*
+        this.extensionsData = window.destovkaAccessoryFilter?.extensionsData || [];
+        this.coversData = window.destovkaAccessoryFilter?.coversData || [];
+
+        if (!this.extensionsData.length || !this.coversData.length) {
+            console.warn('Extensions or covers data not available, some validations will be skipped');
+        }
+            */
+        this.extensionsData = [];
+        this.coversData = [];
+        this.loadInitialData();
+
         console.log('Tank Filter initialized with settings:', {
             concrete: this.wantsConcrete,
             load: this.requiredLoad,
@@ -185,7 +197,31 @@ class DestovkaTankFilter {
         });
     }
 
+    async loadInitialData() {
+        try {
+            const [extensionsResponse, coversResponse] = await Promise.all([
+                fetch('jsony/nastavec.json'),
+                fetch('jsony/poklopy.json')
+            ]);
+    
+            if (!extensionsResponse.ok || !coversResponse.ok) {
+                throw new Error('Failed to load data');
+            }
+    
+            this.extensionsData = await extensionsResponse.json();
+            this.coversData = await coversResponse.json();
+    
+            console.log('Data loaded:', {
+                extensions: this.extensionsData.length,
+                covers: this.coversData.length
+            });
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
     async filterTanks(tanks) {
+        await this.loadInitialData();
         if (!tanks || !Array.isArray(tanks) || tanks.length === 0) {
             return [];
         }
@@ -306,55 +342,167 @@ class DestovkaTankFilter {
     }
 
     async passesCriticalFilters(tank) {
-        // 1. NEJVYŠŠÍ PRIORITA - Zatížení
+        // 1. Kontrola minimálního objemu
+        if (!this.passesVolumeCheck(tank)) {
+            return false;
+        }
+     
+        // 2. Kontrola zatížení
         if (!this.passesLoadCheck(tank)) {
             console.log(`Tank ${tank['Kód']} filtered out: Failed load check`);
             return false;
         }
-    
-        // 2. DRUHÁ PRIORITA - Kontrola maximálního překrytí a požadavků na hloubku
+     
+        // 3. Kontrola hloubky nátoku vs max překrytí zeminou
         const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']); 
+        if (this.requiredInflowDepth > maxCovering) {
+            console.log(`Tank ${tank['Kód']} filtered out: Required depth ${this.requiredInflowDepth} exceeds max covering ${maxCovering}`);
+            return false;
+        }
+     
+        // 4. Kontrola defaultInflowDepth
         const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
-        const requiredInflowDepth = this.requiredInflowDepth;
-    
-        // Podmínka 1: inflowDepth <= maximální překrytí zeminou
-        if (requiredInflowDepth > maxCovering) {
-            console.log(`Tank ${tank['Kód']} filtered out: Required depth ${requiredInflowDepth} exceeds max covering ${maxCovering}`);
-            return false;
-        }
-    
-        // Podmínka 2: maximální překrytí >= (výchozí hloubka nátoku + 350mm)
-        const minRequiredCovering = defaultInflowDepth + 350;
-        if (maxCovering < minRequiredCovering) {
-            console.log(`Tank ${tank['Kód']} filtered out: Max covering ${maxCovering} is less than minimum required ${minRequiredCovering}`);
-            return false;
-        }
-    
-        // Kontrola defaultInflowDepth - aby nádrž nezačínala moc hluboko
         if (defaultInflowDepth > this.requiredInflowDepth) {
             console.log(`Tank ${tank['Kód']} filtered out: Default inflow depth ${defaultInflowDepth} is greater than required ${this.requiredInflowDepth}`);
             return false;
         }
-    
-        // 3. Ostatní kontroly
+     
+        // 5a. Kontrola dostupnosti nástavců
+        if (!this.hasCompatibleExtensions(tank)) {
+            console.log(`Tank ${tank['Kód']} has no compatible extensions`);
+        }
+
+        // 5b. Kontrola dostupnosti teleskopických poklopů
+        if (!this.hasCompatibleTelescopicCover(tank)) {
+            console.log(`Tank ${tank['Kód']} has no compatible telescopic covers`);
+        }
+
+        // Pokud obě kontroly selžou, nádrž je nevhodná
+        if (!this.hasCompatibleExtensions(tank) && !this.hasCompatibleTelescopicCover(tank)) {
+            console.log(`Tank ${tank['Kód']} filtered out: Neither extensions nor telescopic covers are available`);
+            return false;
+        }
+     
+        // 6. Ostatní kontroly
         if (!this.wantsConcrete && tank['Konstrukce'] === 'Plastová samonosná na desku') {
             console.log(`Tank ${tank['Kód']} filtered out: Concrete construction not wanted`);
             return false;
         }
-    
+     
         if (!this.passesDNCheck(tank)) {
             console.log(`Tank ${tank['Kód']} filtered out: Failed DN check`);
             return false;
         }
-    
+     
         if (this.soilType === 'clay' && tank['Vhodné do jílovité půdy'] !== 'ANO') {
             console.log(`Tank ${tank['Kód']} filtered out: Not suitable for clay soil`);
             return false;
         }
-    
+     
         console.log(`Tank ${tank['Kód']} passed all filters`);
         return true;
+     }
+
+     passesVolumeCheck(tank) {
+        const tankVolume = parseInt(tank['Objem (l)']);
+        if (tankVolume < this.requiredVolume) {
+            console.log(`Tank ${tank['Kód']} filtered out: Volume ${tankVolume} is less than required ${this.requiredVolume}`);
+            return false;
+        }
+        return true;
     }
+    
+    // Nová funkce pro kontrolu dostupnosti nástavců
+    hasCompatibleExtensions(tank) {
+        const tankSystem = tank['Systém'];
+        console.group(`Checking extensions for tank ${tank['Kód']} (System: ${tankSystem})`);
+        
+        // Debug log celých dat
+        if(tank['Kód'] === '35.3700.0000') {
+            console.log('VŠECHNA DATA NÁSTAVCŮ:', {
+                rawExtensionsData: this.extensionsData,
+                tankSystem: tankSystem
+            });
+        }
+     
+        const compatibleExtensions = this.extensionsData.filter(extension => 
+            extension.Systém === tankSystem
+        );
+     
+        console.log('Available extensions:', {
+            total: this.extensionsData.length,
+            compatible: compatibleExtensions.length,
+            extensions: compatibleExtensions.map(ext => ({
+                code: ext.Kód,
+                name: ext.Název,
+                height: ext['Výška (mm)'],
+                system: ext.Systém
+            }))
+        });
+     
+        if(tank['Kód'] === '35.3700.0000') {
+            console.log('Detailní kontrola pro tank 35.3700.0000:', {
+                tankSystem: tankSystem,
+                allExtensionSystems: this.extensionsData.map(ext => ext.Systém),
+                exactMatches: this.extensionsData.filter(ext => ext.Systém === tankSystem).length
+            });
+        }
+     
+        const result = compatibleExtensions.length > 0;
+        console.log(`Result: ${result ? 'Has compatible extensions' : 'No compatible extensions found'}`);
+        console.groupEnd();
+        return result;
+     }
+     
+     hasCompatibleTelescopicCover(tank) {
+        const tankSystem = tank['Systém'];
+        const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
+        const heightDiff = this.requiredInflowDepth - defaultInflowDepth;
+     
+        console.group(`Checking telescopic covers for tank ${tank['Kód']}`);
+        console.log('Parameters:', {
+            tankSystem,
+            defaultInflowDepth,
+            requiredInflowDepth: this.requiredInflowDepth,
+            heightDifference: heightDiff
+        });
+     
+        const compatibleCovers = this.coversData.filter(cover => {
+            const systemMatch = cover.Systém === tankSystem || cover[''] === tankSystem;
+            const hasHeights = cover['Minimální výška (mm)'] && cover['Maximální výška (mm)'];
+            
+            if (!systemMatch || !hasHeights) {
+                return false;
+            }
+     
+            const minHeight = parseFloat(cover['Minimální výška (mm)']);
+            const maxHeight = parseFloat(cover['Maximální výška (mm)']);
+            
+            const maxCondition = heightDiff - maxHeight <= 0;
+            const minCondition = heightDiff - minHeight >= 0;
+     
+            console.log('Cover check:', {
+                code: cover.Kód,
+                name: cover.Název,
+                system: cover.Systém,
+                system2: cover[''],
+                minHeight,
+                maxHeight,
+                maxCondition,
+                minCondition,
+                bothConditionsMet: maxCondition && minCondition
+            });
+     
+            return maxCondition && minCondition;
+        });
+     
+        console.log('Compatible covers found:', compatibleCovers.length);
+        console.log('Compatible covers:', compatibleCovers);
+        console.groupEnd();
+     
+        return compatibleCovers.length > 0;
+     }
+    
 
     async passesExtensionCheck(tank) {
         this.extensionCalculator = new ExtensionCalculator(
