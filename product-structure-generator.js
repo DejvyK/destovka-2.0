@@ -350,17 +350,40 @@ formatAvailability(availability) {
     }
     
     updateGeigerTotal(container) {
-        const inputs = container.querySelectorAll('.destovka-product-geigery-card-input');
-        const basePrice = 189; // Základní cena za kus
-        let total = 0;
+    const inputs = container.querySelectorAll('.destovka-product-geigery-card-input');
+    let total = 0;
+
+    // Zjistit typ geigeru z nadřazeného kontejneru
+    const geigerType = container.querySelector('.destovka-product-geigery-card-title')?.textContent;
     
-        inputs.forEach(input => {
-            total += parseInt(input.value || 0) * basePrice;
+    // Nastavit základní cenu podle typu
+    const basePrice = geigerType?.includes('Spodní výtok') ? 219 : 239;
+
+    inputs.forEach(input => {
+        total += parseInt(input.value || 0) * basePrice;
+    });
+
+    const totalElement = container.querySelector('.destovka-product-geigery-card-total-price');
+    totalElement.textContent = `${total.toLocaleString('cs-CZ')} Kč`;
+
+    // Aktualizovat celkovou cenu všech geigerů
+    const allGeigersTotal = container.closest('.destovka-products-container')
+        ?.querySelector('.destovka-product-potrubi-total-price');
+    if (allGeigersTotal) {
+        const allCards = container.closest('.destovka-products-container')
+            .querySelectorAll('.destovka-product-geigery-card-container');
+        let grandTotal = 0;
+        
+        allCards.forEach(card => {
+            const priceElement = card.querySelector('.destovka-product-geigery-card-total-price');
+            if (priceElement) {
+                grandTotal += parseInt(priceElement.textContent.replace(/[^\d]/g, '')) || 0;
+            }
         });
-    
-        const totalElement = container.querySelector('.destovka-product-geigery-card-total-price');
-        totalElement.textContent = `${total.toLocaleString('cs-CZ')} Kč`;
+        
+        allGeigersTotal.textContent = `${grandTotal.toLocaleString('cs-CZ')} Kč vč. DPH`;
     }
+}
 
     createProductSpecs(data) {
         // Kontrolujeme, zda jde o plovací čerpadlo

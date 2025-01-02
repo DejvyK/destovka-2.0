@@ -1316,6 +1316,45 @@ body {
     font-size: 18px;
 }
 
+.destovka-vsak-recommendation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    background-color: var(--destovka-bg-light);
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+    margin: 24px 0;
+    width: 100%;
+}
+
+.destovka-vsak-recommendation-title {
+    font-size: 16px;
+    color: var(--destovka-inactive);
+}
+
+.destovka-vsak-recommendation-content {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--destovka-success);
+}
+
+.destovka-vsak-recommendation-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--destovka-inactive);
+    font-size: 14px;
+}
+
+.destovka-vsak-recommendation-values {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-left: 16px;
+    color: var(--destovka-text-color);
+}
+
 .destovka-product-note {
     margin-top: 12px;
 }
@@ -1531,4 +1570,335 @@ body {
 .destovka-cart-card-container img {
     object-fit: contain;
     border-radius: 4px;
+}
+
+
+/* Kontejner pro sekci nástavců */
+.destovka-extensions-section {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 0;
+}
+
+/* Info o výškách */
+.destovka-height-info {
+    display: flex;
+    gap: 32px;
+    padding: 24px;
+    background-color: var(--destovka-bg-light);
+    border-radius: 8px;
+    border: 1px solid var(--destovka-border-color);
+}
+
+.destovka-height-info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+}
+
+.destovka-height-info-item span {
+    color: var(--destovka-inactive);
+}
+
+.destovka-height-info-item strong {
+    color: var(--destovka-text-color);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Grid nástavců */
+.destovka-extensions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Karta nástavce */
+.destovka-accessory-item {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+
+.destovka-accessory-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.destovka-accessory-item-main {
+    display: flex;
+    padding: 24px;
+    gap: 32px;
+    align-items: center;
+}
+
+/* Obrázek nástavce */
+.destovka-accessory-item-visuals {
+    width: 180px;
+    min-width: 180px;
+}
+
+.destovka-accessory-item-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 180px;
+}
+
+.destovka-accessory-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+}
+
+.destovka-accessory-item:hover .destovka-accessory-item-image img {
+    transform: scale(1.05);
+}
+
+/* Info o nástavci */
+.destovka-accessory-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.destovka-accessory-item-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+}
+
+.destovka-accessory-item-code {
+    font-size: 14px;
+    color: var(--destovka-secondary-text-color);
+}
+
+.destovka-accessory-item-height {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--destovka-text-color);
+    padding: 8px 0;
+}
+
+/* Poznámka o zkrácení */
+.destovka-extension-cut-note {
+    padding: 12px;
+    background-color: #fff8e7;
+    border: 1px solid #ffd166;
+    border-radius: 6px;
+    color: #996b00;
+    font-size: 14px;
+}
+
+/* Pravý sloupec s akcemi */
+.destovka-accessory-item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 240px;
+    border-left: 1px solid var(--destovka-border-color);
+    padding-left: 24px;
+}
+
+/* Cena */
+.destovka-tank-total-price {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--destovka-success);
+}
+
+/* Counter */
+.destovka-quantity-counter {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.destovka-quantity-input {
+    width: 80px;
+    height: 48px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.destovka-quantity-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.destovka-quantity-increase,
+.destovka-quantity-decrease {
+    width: 32px;
+    height: 23px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--destovka-inactive);
+    transition: all 0.2s ease;
+}
+
+.destovka-quantity-increase:hover,
+.destovka-quantity-decrease:hover {
+    background-color: var(--destovka-bg-light);
+    border-color: var(--destovka-inactive);
+}
+
+.destovka-error-message {
+    width: 100%;
+    padding: 24px;
+    background-color: #fee2e2;
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+}
+
+.destovka-error-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.destovka-error-content h3 {
+    color: #dc2626;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.destovka-remaining-height {
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+
+.destovka-height-info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.destovka-height-negative {
+    color: #dc2626 !important;
+}
+
+.destovka-height-positive {
+    color: var(--destovka-success) !important;
+}
+
+
+/* v style.css */
+.destovka-cart-total-wrapper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    gap: 32px;
+    padding: 24px;
+    border-top: 1px solid var(--destovka-border-color);
+}
+
+.destovka-cart-total-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 280px;
+}
+
+.destovka-cart-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 16px;
+    border: 1px solid var(--destovka-border-color);
+    background: white;
+    color: var(--destovka-inactive);
+    transition: all 0.2s ease;
+}
+
+.destovka-cart-action-button:hover {
+    border-color: var(--destovka-inactive);
+}
+
+.destovka-cart-primary-button {
+    background: var(--destovka-success);
+    color: white;
+    border: none;
+}
+
+.destovka-cart-primary-button:hover {
+    background: white;
+    color: var(--destovka-success);
+    border: 1px solid var(--destovka-success);
+}
+
+.destovka-cart-button-icon {
+    width: 20px;
+    height: 20px;
+}
+
+
+
+#destovka-step4 .destovka-product-card,
+#destovka-step7 .destovka-product-card,
+#destovka-step8 .destovka-product-card {
+    height: 410px;
+}
+#destovka-step5 .destovka-product-card {
+    height: 370px;
+}
+
+#destovka-step12 h1 {
+    text-align: center;
+    margin-top: 40px;
+}
+
+
+@media (max-width:992px ){
+    #destovka-step7 .destovka-product-card {
+        height: 420px;
+    }
+
+    #destovka-step4 .destovka-product-card,
+    #destovka-step8 .destovka-product-card {
+        height: 380px;
+    }
+
+    #destovka-step5 .destovka-product-card {
+        height: 365px;
+    }
+    
+}
+
+
+button.destovka-accessory-select.destovka-selected {
+    background: var(--destovka-success);
+    color: white;
+}
+
+.bez-dph {
+    color: black;
 }

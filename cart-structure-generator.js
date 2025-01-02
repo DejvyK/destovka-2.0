@@ -55,7 +55,7 @@ class CartStructureGenerator {
                         celkem <span class="destovka-cart-card-price">${this.formatPrice(totalPriceWithVAT)} Kč</span> vč DPH
                     </div>
                     <div>
-                        celkem <span class="destovka-cart-card-price">${this.formatPrice(totalPriceWithoutVAT)} Kč</span> bez DPH
+                        celkem <span class="destovka-cart-card-price bez-dph">${this.formatPrice(totalPriceWithoutVAT)} Kč</span> bez DPH
                     </div>
                     
                     <button class="destovka-cart-card-remove-button" data-product-code="${cartItem.productCode}">
@@ -70,17 +70,37 @@ class CartStructureGenerator {
         `;
     }
 
-    createCartTotalItem(totalItems, totalPriceWithVAT) {
-        const totalPriceWithoutVAT = this.calculatePriceWithoutVAT(totalPriceWithVAT);
-        
-        return `
-            <div class="destovka-cart-total-wrapper">
-                <div>celkem ${totalItems} ${this.getPluralForm(totalItems, 'kus', 'kusy', 'kusů')}</div>
-                <div>celkem <span class="destovka-cart-total-price-without-vat">${this.formatPrice(totalPriceWithoutVAT)} Kč</span> bez DPH</div>
-                <div style="font-size: 20px">celkem <span class="destovka-cart-total-price">${this.formatPrice(totalPriceWithVAT)} Kč</span> vč DPH</div>            
-            </div>
-        `;
-    }
+    // v cart-structure-generator.js
+createCartTotalItem(totalItems, totalPriceWithVAT) {
+    const totalPriceWithoutVAT = this.calculatePriceWithoutVAT(totalPriceWithVAT);
+    
+    return `
+    <div class="destovka-cart-total-wrapper-wrapper">
+        <div class="destovka-cart-total-wrapper">
+            <div>celkem ${totalItems} ${this.getPluralForm(totalItems, 'kus', 'kusy', 'kusů')}</div>
+            <div>celkem <span class="destovka-cart-total-price-without-vat">${this.formatPrice(totalPriceWithoutVAT)} Kč</span> bez DPH</div>
+            <div style="font-size: 20px">celkem <span class="destovka-cart-total-price">${this.formatPrice(totalPriceWithVAT)} Kč</span> vč DPH</div>            
+        </div>
+        <div class="destovka-cart-total-buttons">
+            <button id="destovka-cart-email-button" class="destovka-cart-action-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="destovka-cart-button-icon">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                Odeslat do e-mailu
+            </button>
+            <button id="destovka-cart-checkout-button" class="destovka-cart-action-button destovka-cart-primary-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="destovka-cart-button-icon">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                Přidat do košíku 
+            </button>
+        </div>
+    </div>
+    `;
+}
 
     // Helper metody pro výpočty
     extractPrice(price) {
