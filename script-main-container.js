@@ -2941,48 +2941,61 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
         }
         this.productContainer.innerHTML = '';
     
-        // Získáme DN z form dat
+        // Získáme DN z form dat pro oba průměry
         const inflowDiameter = window.destovkaStepManager?.formData.get('inflowDiameter');
-        console.log('inflowDiameter:', inflowDiameter);  // Debug log
-    
-        const dnSystem = `DN${inflowDiameter}`;
-        console.log('dnSystem:', dnSystem);  // Debug log
-    
-        // Filtrujeme data podle DN
-        const filteredData = this.potrubíData.filter(item => item.Systém === dnSystem);
-        console.log('Filtered Data:', filteredData);  // Debug log
-        console.log('All Data:', this.potrubíData);  // Debug log pro všechna data
-    
-        const categories = ['Trubky', 'Kolena', 'Odbočky', 'Ostatní'];
+        const outflowDiameter = window.destovkaStepManager?.formData.get('outflowDiameter');
         
-        let columnsHTML = '';
-        categories.forEach(category => {
-            console.log('Processing category:', category);  // Debug log
-            const categoryItems = filteredData.filter(item => item.Sloupec === category);
-            console.log('Category items:', categoryItems);  // Debug log
+        // Vytvoříme pole unikátních průměrů
+        const diameters = [...new Set([inflowDiameter, outflowDiameter])];
+        
+        let allColumnsHTML = '';
+        
+        // Pro každý unikátní průměr vytvoříme sekci
+        diameters.forEach(diameter => {
+            const dnSystem = `DN${diameter}`;
+            console.log('Generuji sekci pro:', dnSystem);
     
-            if (categoryItems.length > 0) {
-                const categoryData = {
-                    title: category,
-                    items: categoryItems,
-                    feedData: this.feedData,
-                    systemTitle: `systém pro ${dnSystem}`
-                };
+            // Filtrujeme data podle DN
+            const filteredData = this.potrubíData.filter(item => item.Systém === dnSystem);
+            
+            const categories = ['Trubky', 'Kolena', 'Odbočky', 'Ostatní'];
+            
+            let columnsHTML = '';
+            categories.forEach(category => {
+                const categoryItems = filteredData.filter(item => item.Sloupec === category);
+                
+                if (categoryItems.length > 0) {
+                    const categoryData = {
+                        title: category,
+                        items: categoryItems,
+                        feedData: this.feedData,
+                        systemTitle: `systém pro ${dnSystem}`
+                    };
+                    
+                    columnsHTML += this.productGenerator.createPotrubiProductItem(categoryData);
+                }
+            });
     
-                columnsHTML += this.productGenerator.createPotrubiProductItem(categoryData);
+            if (columnsHTML) {
+                allColumnsHTML += `
+                    <div class="destovka-potrubi-section">
+                        <h2 class="destovka-potrubi-section-title">Potrubí pro ${dnSystem}</h2>
+                        <div class="destovka-potrubi-columns-container">
+                            ${columnsHTML}
+                        </div>
+                    </div>
+                `;
             }
         });
     
         this.productContainer.innerHTML = `
-    <div class="destovka-potrubi-columns-container">
-        ${columnsHTML}
-    </div>
-    <div class="destovka-product-potrubi-total-container">
-        <div class="destovka-product-potrubi-total">
-            Celková cena: <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
-        </div>
-    </div>
-`;
+            ${allColumnsHTML}
+            <div class="destovka-product-potrubi-total-container">
+                <div class="destovka-product-potrubi-total">
+                    Celková cena: <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
+                </div>
+            </div>
+        `;
     
         this.initializeInputHandlers();
     }
@@ -3280,8 +3293,8 @@ class VsakovaciCalculator {
     calculateRecommendedJimka() {
         const minArea = this.calculateMinArea();
         const minVolume = this.calculateMinVolume() / 1000;
-    
-        // Počítáme počet RUR1000 podle plochy i objemu
+        
+        // Výpočet RUR1000 a RUR500
         const countByArea = Math.ceil(minArea / 1.54);
         const countByVolume = Math.ceil(minVolume / 1.0);
         
@@ -3289,15 +3302,24 @@ class VsakovaciCalculator {
         let remainingArea = minArea - (countRUR1000 * 1.54);
         let remainingVolume = minVolume - (countRUR1000 * 1.0);
     
-        // Pokud zbývá plocha nebo objem, přidáme RUR500
         let countRUR500 = Math.max(
             Math.ceil(remainingArea / 1.13),
             Math.ceil(remainingVolume / 0.5)
         );
+
+        // Výpočet nástavců
+        const inflowDepth = parseFloat(window.destovkaStepManager?.formData.get('inflowDepth')) || 0;
+        const Y = inflowDepth / 200;
+        // Zaokrouhlení nahoru i při nejmenším zbytku
+        const YRounded = Y % 1 > 0 ? Math.ceil(Y) : Y;
+        const totalJimky = countRUR1000 + countRUR500;
+        const countNastavce = YRounded * totalJimky;
     
         return {
             rur1000: countRUR1000,
             rur500: countRUR500,
+            nastavce: countNastavce,
+            odvzduseni: 1,  // Vždy 1
             totalArea: (countRUR1000 * 1.54) + (countRUR500 * 1.13),
             totalVolume: (countRUR1000 * 1.0) + (countRUR500 * 0.5)
         };
@@ -3310,9 +3332,17 @@ class VsakovaciCalculator {
         const countByArea = Math.ceil(minArea / 0.93);
         const countByVolume = Math.ceil(minVolume / 0.3);
         const tunnelCount = Math.max(countByArea, countByVolume);
+
+        // Výpočet čel a uzávěrů
+        const celUzaverPairs = Math.ceil(tunnelCount / 6);
+        
+        // Výpočet geotextilie
+        const geotextileArea = tunnelCount * 6;
     
         return {
             count: tunnelCount,
+            celUzaverPairs: celUzaverPairs,
+            geotextileArea: geotextileArea,
             totalArea: tunnelCount * 0.93,
             totalVolume: tunnelCount * 0.3
         };
@@ -3557,6 +3587,8 @@ getProductsFromXML() {
                             ${recommendation.rur1000 > 0 ? `${recommendation.rur1000}× RUR1000` : ''}
                             ${recommendation.rur1000 > 0 && recommendation.rur500 > 0 ? ' a ' : ''}
                             ${recommendation.rur500 > 0 ? `${recommendation.rur500}× RUR500` : ''}
+                            ${recommendation.nastavce > 0 ? `, ${recommendation.nastavce}× nástavec` : ''}
+                            ${recommendation.odvzduseni ? ' a 1× odvzdušnění' : ''}
                         </div>
                         <div class="destovka-vsak-recommendation-details">
                             Toto zapojení poskytne:
@@ -3576,6 +3608,9 @@ getProductsFromXML() {
                         </div>
                         <div class="destovka-vsak-recommendation-content">
                             ${recommendation.count}× GARANTIA 300
+                            ${recommendation.celUzaverPairs > 0 ? `, ${recommendation.celUzaverPairs}× pár čel` : ''}
+                            ${recommendation.celUzaverPairs > 0 ? `, ${recommendation.celUzaverPairs}× uzávěr` : ''}
+                            ${recommendation.geotextileArea > 0 ? `, ${recommendation.geotextileArea} m² geotextilie` : ''}
                         </div>
                         <div class="destovka-vsak-recommendation-details">
                             Toto zapojení poskytne:

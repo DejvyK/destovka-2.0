@@ -794,6 +794,22 @@ body {
     font-weight: 500;
 }
 
+.destovka-potrubi-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    margin-bottom: 32px;
+}
+
+.destovka-potrubi-section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--destovka-text-color);
+    margin: 0;
+    padding: 0 0 16px 0;
+}
+
 .destovka-product-potrubi-card-container {
     width: fit-content;
     color: var(--destovka-text-color);

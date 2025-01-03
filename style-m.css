@@ -123,6 +123,16 @@
         padding: 10px 40px 20px 40px
     }
 
+        .destovka-potrubi-section {
+            margin-bottom: 24px;
+        }
+    
+        .destovka-potrubi-section-title {
+            font-size: 20px;
+            padding: 0 0 12px 0;
+            text-align: center;
+        }
+
     #destovka-distance-group {
         max-width: 100%;
     }
