@@ -1902,3 +1902,28 @@ button.destovka-accessory-select.destovka-selected {
 .bez-dph {
     color: black;
 }
+
+.destovka-extension-recommendation {
+    padding: 16px;
+    background-color: #f0f9ff;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.destovka-extension-recommendation-title {
+    font-weight: 600;
+    color: var(--destovka-text-color);
+    margin-bottom: 8px;
+}
+
+.destovka-extension-recommendation-text {
+    color: var(--destovka-success);
+    font-weight: 500;
+}
+
+@media (min-width:1050px) { 
+.destovka-form-group:nth-child(10) {
+    max-width: calc(50% - 10px);
+}
+}

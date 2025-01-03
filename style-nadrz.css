@@ -283,3 +283,10 @@
         align-self: center;
     }
 }
+
+
+.destovka-accessory-insufficient {
+    color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    background-color: #fee2e2 !important;
+}

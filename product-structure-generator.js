@@ -419,7 +419,7 @@ formatAvailability(availability) {
                     <img class="destovka-product-image" src="img/delete.png" />
                 </div>
                 <div class="destovka-product-title">
-                    żádná
+                    Žádná
                 </div>
                 <div class="destovka-product-card-footer">
                     <button class="destovka-product-select-button">

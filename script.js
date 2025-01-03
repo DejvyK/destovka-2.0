@@ -93,7 +93,8 @@ class DestovkaStepManager {
             inflowDiameter: { required: true },
             outflowDiameter: { required: true },
             inflowDepth: { required: true, min: 0, max: 1000 },
-            distance: { required: true, min: 0 }
+            distance: { required: true, min: 0 },
+            rainfallStation: { required: true }
         };
     }
 
@@ -103,7 +104,16 @@ class DestovkaStepManager {
             const distanceGroup = document.getElementById('destovka-distance-group');
             const isDistanceMode = distanceGroup.style.display !== 'none';
             
-            const requiredFields = ['volumeRange', 'concrete', 'soil', 'hsvDepth', 'load', 'inflowDiameter', 'outflowDiameter'];
+            const requiredFields = [
+                'volumeRange', 
+                'concrete', 
+                'soil', 
+                'hsvDepth', 
+                'load', 
+                'inflowDiameter', 
+                'outflowDiameter',
+                'rainfallStation'
+            ];
     
             requiredFields.forEach(fieldId => {
                 const element = document.getElementById(fieldId);
@@ -111,13 +121,11 @@ class DestovkaStepManager {
     
                 const value = element.value.trim();
                 
-                // Základní kontrola existence hodnoty
-                if (value === '') {
+                if (value === '' || (fieldId === 'rainfallStation' && value === 'Vyberte stanici')) {
                     errors.push(fieldId);
                     return;
                 }
     
-                // Kontrola číselných hodnot
                 if (fieldId === 'hsvDepth') {
                     const unitButton = element.closest('.destovka-input-row')?.querySelector('.destovka-unit-button');
                     const unit = unitButton?.getAttribute('data-current-unit') || 'mm';
@@ -129,7 +137,6 @@ class DestovkaStepManager {
                 }
             });
     
-            // Validace hloubky nátoku nebo vzdálenosti
             if (isDistanceMode) {
                 const distanceInput = document.getElementById('distance');
                 if (distanceInput) {
@@ -225,6 +232,7 @@ class DestovkaStepManager {
             this.formData.set('load', document.getElementById('load')?.value);
             this.formData.set('inflowDiameter', document.getElementById('inflowDiameter')?.value);
             this.formData.set('outflowDiameter', document.getElementById('outflowDiameter')?.value);
+            this.formData.set('rainfallStation', document.getElementById('rainfallStation')?.value);
      
             const distanceGroup = document.getElementById('destovka-distance-group');
             const distanceInput = document.getElementById('distance');
@@ -299,6 +307,7 @@ class DestovkaStepManager {
             document.getElementById('load').value = this.formData.get('load') || '';
             document.getElementById('inflowDiameter').value = this.formData.get('inflowDiameter') || '';
             document.getElementById('outflowDiameter').value = this.formData.get('outflowDiameter') || '';
+            document.getElementById('rainfallStation').value = this.formData.get('rainfallStation') || '';
      
             // HSV hloubka
             const hsvInput = document.getElementById('hsvDepth');
@@ -359,10 +368,27 @@ class DestovkaStepManager {
                 const confirmed = confirm("Pozor, návratem na předchozí krok začnete znovu, opravdu chcete pokračovat?");
                 if (!confirmed) return;
             }
+
+            if (this.currentStep === 6) {
+                const productContainer = document.querySelector('#destovka-step5 .destovka-products-container');
+                if (productContainer && !productContainer.querySelector('.destovka-product-card')) {
+                    newStep = 4; // Jít na filtrace místo sifonů
+                }
+            }
     
             // Vyčištění košíku pro aktuální krok
             const stepItems = window.destovkaCart.destGetItemsByStep(this.currentStep);
             stepItems.forEach(item => {
+                window.destovkaCart.destRemoveItem(item.productCode);
+            });
+
+            const itemsToRemove = window.destovkaCart.destGetAllItems().filter(item => {
+                if (item.step === this.currentStep) return true;
+                if (this.currentStep === 3 && item.type === 'cover') return true;
+                return false;
+            });
+            
+            itemsToRemove.forEach(item => {
                 window.destovkaCart.destRemoveItem(item.productCode);
             });
     
@@ -955,7 +981,30 @@ class DestovkaAccessoryManager {
         if (!popup) {
             popup = document.createElement('div');
             popup.className = 'destovka-accessory-popup';
-    
+        
+            // Získám informaci o poklopu z dat nádrže
+            const includedCover = tankData['Poklop v ceně (žádný/nepochozí/pochozí/do 1,5 t/do 3,5 t/do 12,5 t/do 40 t'];
+            const hasCover = includedCover && includedCover !== 'žádný';
+            
+            // Získám požadovanou zátěž z formuláře
+            const requiredLoad = window.destovkaStepManager?.formData.get('load');
+        
+            // Porovnání zátěže
+            const loadHierarchy = {
+                'nepochozí': 0,
+                'pochozí': 1,
+                'pojezdná do 3,5 t': 2,
+                'pojezdná do 12 t': 3
+            };
+        
+            const isInsufficient = hasCover && 
+                loadHierarchy[includedCover] < loadHierarchy[requiredLoad];
+        
+            const coverInfo = hasCover ? `
+                <div class="destovka-accessory-included-info ${isInsufficient ? 'destovka-accessory-insufficient' : ''}">
+                    Vaše nádrž má v ceně ${isInsufficient ? 'pouze ' : ''}${includedCover} poklop
+                </div>` : '';
+        
             let content = '';
             if (compatibleCovers.length === 0) {
                 content = `
@@ -965,13 +1014,14 @@ class DestovkaAccessoryManager {
                             <button class="destovka-accessory-popup-close">&times;</button>
                         </div>
                         <div class="destovka-accessory-popup-body">
+                            ${coverInfo}
                             <div class="destovka-accessory-warning">
-                                Pro požadovanou hloubku ${requiredDepth}mm nejsou k dispozici vhodné poklopy.
-                                Budete muset vybrat jinou nádrž nebo upravit hloubku nátoku.
+                                Pro požadovanou hloubku ${requiredDepth}mm nejsou teleskopické poklopy.
+                                Tuto požadovanou hloubku však můžete překlenout nástavci v dalším kroce.
                             </div>
                         </div>
                         <div class="destovka-accessory-popup-footer">
-                            <button class="destovka-accessory-popup-back">Zpět k výběru nádrže</button>
+                            <button class="destovka-accessory-popup-confirm">Pokračovat</button>
                         </div>
                     </div>`;
             } else {
@@ -982,11 +1032,7 @@ class DestovkaAccessoryManager {
                             <button class="destovka-accessory-popup-close">&times;</button>
                         </div>
                         <div class="destovka-accessory-popup-body">
-                            ${this.coverIncluded ? 
-                                `<div class="destovka-accessory-included-info">
-                                    Nádrž již obsahuje ${this.coverType} poklop
-                                </div>` : ''
-                            }
+                            ${coverInfo}
                             <div class="destovka-accessory-section">
                                 <h3>Dostupné poklopy</h3>
                                 <div class="destovka-accessory-items">
