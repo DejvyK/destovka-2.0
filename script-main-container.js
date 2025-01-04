@@ -3249,11 +3249,16 @@ class DestovkaCalculatorVsakObjem {
 class VsakovaciCalculator {
     constructor(formData) {
         this.detailCalculator = new DestovkaCalculatorVsakObjem(formData);
+        this.matrixData = null;
         this.init();
     }
 
     async init() {
-        await this.detailCalculator.init();
+        await Promise.all([
+            this.detailCalculator.init(),
+            this.loadMatrixData()
+        ]);
+    
         const selectedCoef = this.detailCalculator.getSelectedCoefficient();
         
         if (selectedCoef) {
@@ -3265,6 +3270,16 @@ class VsakovaciCalculator {
             this.minArea = lastEntry.min_vsak_plocha;
             this.minVolume = lastEntry.max_hodnota;
         }
+    
+        // Spočítáme rozložení boxů
+        const boxLayout = this.calculateBoxLayout();
+        this.boxLayout = boxLayout; // Uložíme si výsledek pro pozdější použití
+    
+        console.log('Inicializace VsakovaciCalculator dokončena:', {
+            minArea: this.minArea,
+            minVolume: this.minVolume,
+            boxLayout: this.boxLayout
+        });
     }
 
     calculateMinArea() {
@@ -3280,12 +3295,10 @@ class VsakovaciCalculator {
     async loadMatrixData() {
         try {
             const response = await fetch('jsony/matrix.json');
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            console.log('Loaded potrubi data:', data);  // Debug log
-            this.potrubíData = data;
+            if (!response.ok) throw new Error('Failed to load matrix data');
+            this.matrixData = await response.json();
         } catch (error) {
-            console.error('Chyba při načítání dat potrubí:', error);
+            console.error('Error loading matrix data:', error);
             throw error;
         }
     }
@@ -3345,6 +3358,181 @@ class VsakovaciCalculator {
             geotextileArea: geotextileArea,
             totalArea: tunnelCount * 0.93,
             totalVolume: tunnelCount * 0.3
+        };
+    }
+
+
+
+    calculateBoxLayout() {
+        console.group('Výpočet rozložení boxů');
+        
+        const minArea = this.calculateMinArea();
+        const minVolume = this.calculateMinVolume() / 1000; // převod na m3
+        
+        console.log('Požadavky:', {
+            minArea: `${minArea.toFixed(2)} m²`,
+            minVolume: `${minVolume.toFixed(2)} m³`
+        });
+    
+        // 1. Najdeme koordinace pro plochu
+        const areaCoordinates = this.findNextHigherAreaCoordinates(minArea);
+        console.log('Nalezené koordinace pro plochu:', areaCoordinates);
+    
+        // 2. Najdeme koordinace pro objem, začínáme od floor1
+        const volumeResult = this.findVolumeCoordinates(minVolume);
+        console.log('Nalezené koordinace pro objem:', volumeResult);
+    
+        // 3. Pokud máme více koordinací pro plochu, vybereme nejefektivnější
+        const finalAreaCoord = this.selectMostEfficientCoordinate(areaCoordinates);
+        const finalVolumeCoord = this.selectMostEfficientCoordinate(volumeResult.coordinates);
+    
+        // 4. Vybereme finální variantu podle počtu boxů
+        const result = this.selectFinalVariant(finalAreaCoord, finalVolumeCoord, volumeResult.floor);
+        
+        console.log('Finální výsledek:', result);
+        console.groupEnd();
+        return result;
+    }
+    
+    findNextHigherAreaCoordinates(minArea) {
+        const coordinates = [];
+        let minHigherArea = Infinity;
+        
+        // Procházíme matrix a hledáme nejbližší vyšší hodnotu
+        this.matrixData.matrix.forEach(item => {
+            if (item.area >= minArea) {
+                if (item.area < minHigherArea) {
+                    // Našli jsme novou nejmenší vyšší hodnotu
+                    coordinates.length = 0;
+                    coordinates.push({ x: item.X, y: item.Y, area: item.area });
+                    minHigherArea = item.area;
+                } else if (item.area === minHigherArea) {
+                    // Našli jsme stejnou hodnotu
+                    coordinates.push({ x: item.X, y: item.Y, area: item.area });
+                }
+            }
+        });
+        
+        return coordinates;
+    }
+    
+    findVolumeCoordinates(minVolume) {
+        // Začínáme s floor1
+        let coordinates = this.findNextHigherVolumeInFloor(minVolume, 'floor_1');
+        if (coordinates.length > 0) {
+            return { coordinates, floor: 1 };
+        }
+    
+        // Pokud nenajdeme v floor1, zkusíme floor2
+        coordinates = this.findNextHigherVolumeInFloor(minVolume, 'floor_2');
+        if (coordinates.length > 0) {
+            return { coordinates, floor: 2 };
+        }
+    
+        // Nakonec zkusíme floor3
+        coordinates = this.findNextHigherVolumeInFloor(minVolume, 'floor_3');
+        return { coordinates, floor: 3 };
+    }
+    
+    findNextHigherVolumeInFloor(minVolume, floorKey) {
+        const coordinates = [];
+        let minHigherVolume = Infinity;
+        
+        this.matrixData[floorKey].forEach(item => {
+            if (item.volume >= minVolume) {
+                if (item.volume < minHigherVolume) {
+                    coordinates.length = 0;
+                    coordinates.push({ x: item.X, y: item.Y, volume: item.volume });
+                    minHigherVolume = item.volume;
+                } else if (item.volume === minHigherVolume) {
+                    coordinates.push({ x: item.X, y: item.Y, volume: item.volume });
+                }
+            }
+        });
+        
+        return coordinates;
+    }
+    
+    selectMostEfficientCoordinate(coordinates) {
+        if (coordinates.length <= 1) {
+            return coordinates[0];
+        }
+    
+        // Vypočítáme Z pro každou koordinaci a vybereme nejmenší
+        return coordinates.reduce((efficient, current) => {
+            const currentZ = current.x + current.y;
+            const efficientZ = efficient.x + efficient.y;
+            return currentZ < efficientZ ? current : efficient;
+        });
+    }
+    
+    selectFinalVariant(areaCoord, volumeCoord, floorLevel) {
+        const areaBoxCount = areaCoord.x * areaCoord.y;
+        const volumeBoxCount = volumeCoord.x * volumeCoord.y;
+        
+        // Vybereme variantu s větším počtem boxů
+        const isVolumeWinner = volumeBoxCount > areaBoxCount;
+        const winner = isVolumeWinner ? volumeCoord : areaCoord;
+        
+        return {
+            boxCount: winner.x * winner.y,
+            floorCount: isVolumeWinner ? floorLevel : 1,
+            coordinates: {
+                x: winner.x,
+                y: winner.y
+            },
+            area: winner.area || this.findAreaForCoordinates(winner.x, winner.y),
+            volume: winner.volume || this.findVolumeForCoordinates(winner.x, winner.y, floorLevel)
+        };
+    }
+    
+    // Pomocné metody pro zjištění area/volume podle koordinátů
+    findAreaForCoordinates(x, y) {
+        return this.matrixData.matrix.find(item => item.X === x && item.Y === y)?.area || 0;
+    }
+    
+    findVolumeForCoordinates(x, y, floor) {
+        const floorKey = `floor_${floor}`;
+        return this.matrixData[floorKey].find(item => item.X === x && item.Y === y)?.volume || 0;
+    }
+
+    calculateBoxRecommendation() {
+        if (!this.boxLayout) {
+            console.warn('Box layout není k dispozici');
+            return null;
+        }
+    
+        const { coordinates, floorCount } = this.boxLayout;
+        const width = coordinates.x;  // X je šířka
+        const length = coordinates.y; // Y je délka
+        const height = floorCount;    // floor je výška
+    
+        // Vypočteme skutečné rozměry v metrech
+        const realWidth = width * 0.6;
+        const realLength = length * 0.6;
+        const realHeight = height * 0.4;
+    
+        // Vypočteme vsakovací plochu a objem
+        const actualArea = width * length * 0.36;  // plocha jednoho boxu je 0.36 m2
+        const actualVolume = width * length * height * 0.144;  // objem jednoho boxu je 0.144 m3
+    
+        // Formátování rozměrů pro zobrazení
+        const dimensions = {
+            width: `${realWidth.toFixed(1)} m`,
+            length: `${realLength.toFixed(1)} m`,
+            height: `${realHeight.toFixed(1)} m`
+        };
+    
+        return {
+            layout: {
+                width,
+                length,
+                height
+            },
+            dimensions,
+            totalBoxes: width * length * height,
+            actualArea,
+            actualVolume
         };
     }
 }
@@ -3626,11 +3814,40 @@ getProductsFromXML() {
             const infoBox = this.productGenerator.createVsakInfoBox(minArea, minVolume);
     
             if (this.selectedCategory === 'Vsakovací box') {
+                const minArea = this.calculator.calculateMinArea();
+                const minVolume = this.calculator.calculateMinVolume();
+                const boxRecommendation = this.calculator.calculateBoxRecommendation();
+            
                 this.productContainer.innerHTML = `
-                    ${infoBox}
+                    ${this.productGenerator.createVsakInfoBox(minArea, minVolume)}
+                    ${boxRecommendation ? `
+                        <div class="destovka-vsak-recommendation">
+                            <div class="destovka-vsak-recommendation-title">
+                                Doporučené rozložení vsakovacích boxů:
+                            </div>
+                            <div class="destovka-vsak-recommendation-content">
+                                ${boxRecommendation.layout.width}× ${boxRecommendation.layout.length}× ${boxRecommendation.layout.height} 
+                                (${boxRecommendation.totalBoxes} ks)
+                            </div>
+                            <div class="destovka-vsak-recommendation-details">
+                                Rozměry systému:
+                                <div class="destovka-vsak-recommendation-values">
+                                    <div>Šířka: ${boxRecommendation.dimensions.width}</div>
+                                    <div>Délka: ${boxRecommendation.dimensions.length}</div>
+                                    <div>Výška: ${boxRecommendation.dimensions.height}</div>
+                                </div>
+                                <div class="destovka-vsak-recommendation-values">
+                                    <div>Vsakovací plocha: ${boxRecommendation.actualArea.toFixed(2)} m²</div>
+                                    <div>Vsakovací objem: ${boxRecommendation.actualVolume.toFixed(2)} m³</div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
                     <div class="destovka-vsakbox-container">
                         <div class="destovka-vsakbox-grid-section">
-                            ${this.productGenerator.createVsakBoxGrid()}
+                            ${this.productGenerator.createVsakBoxGrid(
+                                boxRecommendation ? boxRecommendation.layout : null
+                            )}
                         </div>
                         <div class="destovka-vsakbox-products">
                             ${this.getProductsFromXML().map(product => {
@@ -3643,12 +3860,26 @@ getProductsFromXML() {
                         </div>
                     </div>
                 `;
-                
+            
+                // Inicializace ovládacích prvků
                 this.initializeVsakBoxGridControls();
                 this.initializeVsakBoxCounters();
-                this.updateGridVisualization();
-                
-            } else {
+            
+                // Nastavení doporučených hodnot do inputů
+                if (boxRecommendation) {
+                    const lengthInput = this.container.querySelector('[data-dimension="length"]');
+                    const widthInput = this.container.querySelector('[data-dimension="width"]');
+                    const heightInput = this.container.querySelector('[data-dimension="height"]');
+            
+                    if (lengthInput) lengthInput.value = boxRecommendation.layout.length;
+                    if (widthInput) widthInput.value = boxRecommendation.layout.width;
+                    if (heightInput) heightInput.value = boxRecommendation.layout.height;
+            
+                    // Aktualizace vizualizace
+                    this.updateGridVisualization();
+                }
+            }
+            else {
                 this.productContainer.innerHTML = `
                     ${infoBox}
                     ${recommendationHtml}

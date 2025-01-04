@@ -157,7 +157,7 @@ class ProductStructureGenerator {
             </div>
         `;
     }
-
+/*
     createVsakBoxGrid() {
         return `
             <div class="destovka-vsakbox-grid-container">
@@ -202,6 +202,69 @@ class ProductStructureGenerator {
                         <div class="destovka-vsakbox-counter">
                             <button class="destovka-vsakbox-minus" type="button">-</button>
                             <input type="number" value="2" min="1" max="3" class="destovka-vsakbox-input" data-dimension="height">
+                            <button class="destovka-vsakbox-plus" type="button">+</button>
+                        </div>
+                        <span class="destovka-vsakbox-measure">0,8 m</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+        */
+
+    createVsakBoxGrid(initialLayout = null) {
+        return `
+            <div class="destovka-vsakbox-grid-container">
+                <h3 class="destovka-vsakbox-grid-title">Vsakovací box</h3>
+                <div class="destovka-vsakbox-grid-wrapper">
+                    <div class="destovka-vsakbox-grid">
+                        ${Array(10).fill().map(() => `
+                            <div class="destovka-vsakbox-grid-row">
+                                ${Array(10).fill().map(() => `
+                                    <div class="destovka-vsakbox-grid-cell"></div>
+                                `).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="destovka-vsakbox-height-grid">
+                        ${Array(3).fill().map(() => `
+                            <div class="destovka-vsakbox-grid-cell"></div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="destovka-vsakbox-grid-controls">
+                    <div class="destovka-vsakbox-dimension">
+                        <label>délka</label>
+                        <div class="destovka-vsakbox-counter">
+                            <button class="destovka-vsakbox-minus" type="button">-</button>
+                            <input type="number" value="${initialLayout ? initialLayout.length : 7}" 
+                                   min="1" max="10" 
+                                   class="destovka-vsakbox-input" 
+                                   data-dimension="length">
+                            <button class="destovka-vsakbox-plus" type="button">+</button>
+                        </div>
+                        <span class="destovka-vsakbox-measure">4,2 m</span>
+                    </div>
+                    <div class="destovka-vsakbox-dimension">
+                        <label>šířka</label>
+                        <div class="destovka-vsakbox-counter">
+                            <button class="destovka-vsakbox-minus" type="button">-</button>
+                            <input type="number" value="${initialLayout ? initialLayout.width : 5}" 
+                                   min="1" max="10" 
+                                   class="destovka-vsakbox-input" 
+                                   data-dimension="width">
+                            <button class="destovka-vsakbox-plus" type="button">+</button>
+                        </div>
+                        <span class="destovka-vsakbox-measure">3,0 m</span>
+                    </div>
+                    <div class="destovka-vsakbox-dimension">
+                        <label>výška</label>
+                        <div class="destovka-vsakbox-counter">
+                            <button class="destovka-vsakbox-minus" type="button">-</button>
+                            <input type="number" value="${initialLayout ? initialLayout.height : 2}" 
+                                   min="1" max="3" 
+                                   class="destovka-vsakbox-input" 
+                                   data-dimension="height">
                             <button class="destovka-vsakbox-plus" type="button">+</button>
                         </div>
                         <span class="destovka-vsakbox-measure">0,8 m</span>
