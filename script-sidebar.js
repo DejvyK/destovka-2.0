@@ -1,7 +1,7 @@
 // Definujeme kroky
 const sidebarSteps = [
     { id: 1, title: 'Vstupní parametry' },
-    { id: 2, title: 'Výběr nádrže' },
+    { id: 2, title: 'Výběr nádrže a poklopu' },
     { id: 3, title: 'Nástavce' },
     { id: 4, title: 'Filtrace' },
     { id: 5, title: 'Bezpečnostní přepad' },

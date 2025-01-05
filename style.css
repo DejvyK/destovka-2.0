@@ -678,7 +678,7 @@ body {
 
 .destovka-products-container {
     width: 100%;
-    display: flex;
+    display: flex !important;
     flex-wrap: wrap;
     align-items: stretch;
     gap: 24px;
@@ -751,7 +751,7 @@ body {
 
 
 .destovka-back-to-categories {
-    display: flex;
+    display: none !important;
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
@@ -1200,6 +1200,7 @@ body {
     display: flex;
     gap: 32px;
     align-items: flex-start;
+    transform: rotate(180deg);
 }
 
 .destovka-vsakbox-grid-title {
@@ -1214,9 +1215,10 @@ body {
     flex-direction: column;
     gap: 1px;
     background: var(--destovka-border-color);
-    border: 1px solid #000;
+    border: 1px solid #F9F9F9;
     padding: 1px;
     width: fit-content;
+    transform: scaleX(-1);
 }
 
 .destovka-vsakbox-height-grid {
@@ -1434,7 +1436,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 32px;
-    width: 85%;
+    width: 60%;
     max-width: 1500px;
     margin: 0 auto;
     padding: 24px 0;
@@ -1878,36 +1880,6 @@ body {
 
 
 
-#destovka-step4 .destovka-product-card,
-#destovka-step7 .destovka-product-card,
-#destovka-step8 .destovka-product-card {
-    height: 410px;
-}
-#destovka-step5 .destovka-product-card {
-    height: 370px;
-}
-
-#destovka-step12 h1 {
-    text-align: center;
-    margin-top: 40px;
-}
-
-
-@media (max-width:992px ){
-    #destovka-step7 .destovka-product-card {
-        height: 420px;
-    }
-
-    #destovka-step4 .destovka-product-card,
-    #destovka-step8 .destovka-product-card {
-        height: 380px;
-    }
-
-    #destovka-step5 .destovka-product-card {
-        height: 365px;
-    }
-    
-}
 
 
 button.destovka-accessory-select.destovka-selected {
@@ -1938,8 +1910,115 @@ button.destovka-accessory-select.destovka-selected {
     font-weight: 500;
 }
 
+.destovka-product-potrubi-card-container-outofstock {
+    opacity: 0.5;
+}
+
+.destovka-product-potrubi-card-container-outofstock .destovka-product-potrubi-card-input-container {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.destovka-product-geigery-card-container-outofstock {
+    opacity: 0.5;
+}
+
+.destovka-product-geigery-card-container-outofstock .destovka-product-geigery-card-input-container {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.destovka-product-potrubi-total {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.destovka-category-description {
+    margin-bottom: 32px;
+    color: var(--destovka-text-color);
+    text-align: center;
+    max-width: 1200px;
+}
+
+.destovka-categories-description {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+    color: var(--destovka-text-color);
+    text-align: center;
+    max-width: 1200px;
+}
+
+.destovka-category-type {
+    padding: 16px;
+    background-color: var(--destovka-bg-light);
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+}
+
+.destovka-category-type-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+
+
+
 @media (min-width:1050px) { 
 .destovka-form-group:nth-child(10) {
     max-width: calc(50% - 10px);
 }
+}
+
+
+
+#destovka-step4 .destovka-product-card,
+#destovka-step7 .destovka-product-card,
+#destovka-step8 .destovka-product-card {
+    height: 430px;
+}
+#destovka-step5 .destovka-product-card {
+    height: 430px;
+}
+
+#destovka-step12 h1 {
+    text-align: center;
+    margin-top: 40px;
+}
+
+
+@media (max-width:992px ){
+    #destovka-step7 .destovka-product-card {
+        height: 420px;
+    }
+
+    #destovka-step4 .destovka-product-card,
+    #destovka-step8 .destovka-product-card {
+        height: 380px;
+    }
+
+    #destovka-step5 .destovka-product-card {
+        height: 365px;
+    }
+    
+}
+
+
+.destovka-volume-warning {
+    width: 100%;
+    padding: 16px;
+    background-color: #fff8e7;
+    border: 1px solid #ffd166;
+    border-radius: 8px;
+    color: #996b00;
+    margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.destovka-category-selected {
+    border-color: var(--destovka-success);
+    box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1);
 }

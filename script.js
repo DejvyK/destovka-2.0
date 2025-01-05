@@ -361,7 +361,13 @@ class DestovkaStepManager {
 
     handlePreviousStep() {
         if (this.currentStep > 1) {
-            const newStep = this.currentStep - 1;
+            let newStep = this.currentStep - 1;
+
+
+            if (newStep === 1) {
+                window.location.reload();
+                return;
+            }
     
             // Speciální varování pouze při návratu z kroku 2 na 1
             if (this.currentStep === 2) {
@@ -391,6 +397,12 @@ class DestovkaStepManager {
             itemsToRemove.forEach(item => {
                 window.destovkaCart.destRemoveItem(item.productCode);
             });
+
+            if (this.currentStep === 12) {
+                // Vrátíme se na krok 11 bez vyčištění košíku
+                this.changeStep(newStep);
+                return;
+            }
     
             this.changeStep(newStep);
         }
@@ -490,6 +502,39 @@ class DestovkaStepManager {
             const productCode = selectedCard?.dataset.productCode;
             if (productCode) {
                 window.destovkaCart.destAddItem(this.currentStep, productCode, 1);
+            }
+        }
+
+        if (this.currentStep === 5) {  // Jsme na kroku sifonů
+            setTimeout(() => {
+                const productContainer = document.querySelector('#destovka-step5 .destovka-products-container');
+                if (productContainer && !productContainer.querySelector('.destovka-product-card')) {
+                    this.changeStep(6);
+                }
+            }, 100);
+            
+            // Zkontrolujeme hned, jestli tam jsou produkty
+            const productContainer = document.querySelector('#destovka-step5 .destovka-products-container');
+            if (productContainer && !productContainer.querySelector('.destovka-product-card')) {
+                return; // Return pouze pokud nejsou produkty
+            }
+        }
+
+        if (this.currentStep === 6) {
+            const container = document.getElementById('destovka-step6');
+            const productsContainer = container.querySelector('.destovka-products-container');
+            const pumpManager = window.destovkaPumpManager;
+            
+            if (pumpManager.selectedCategory !== 'Žádné') {
+                const selectedCard = productsContainer.querySelector('.destovka-product-selected:not(.destovka-category-selected)');
+                if (!selectedCard) {
+                    alert('Prosím vyberte čerpadlo před pokračováním.');
+                    return;
+                }
+                const productCode = selectedCard.dataset.productCode;
+                if (productCode) {
+                    window.destovkaCart.destAddItem(6, productCode, 1);
+                }
             }
         }
      
@@ -1240,9 +1285,11 @@ class DestovkaAccessoryFilter {
     }
  
     getCompatibleCovers(tankSystem, currentCover, missingHeight) {
+        const requiredLoad = window.destovkaStepManager?.formData.get('load');
         console.log('Filtering covers for system:', tankSystem);
         console.log('Current cover:', currentCover);
         console.log('Missing height:', missingHeight);
+        console.log('Required load:', requiredLoad);
     
         if (!this.coverData || this.coverData.length === 0) {
             console.warn('No cover data available');
@@ -1273,6 +1320,12 @@ class DestovkaAccessoryFilter {
                 return false;
             }
     
+            // Kontrola zatížení - musí mít stejné nebo větší zatížení než požadované
+            if (!this.meetsLoadRequirements(cover.Zatížení, requiredLoad)) {
+                console.log(`Load mismatch: Cover load ${cover.Zatížení} doesn't meet required load ${requiredLoad}`);
+                return false;
+            }
+
             // Kontrola upgradu poklopu
             if (currentCover && currentCover !== 'žádný') {
                 const currentLoadIndex = this.getLoadIndex(currentCover);
@@ -1287,6 +1340,21 @@ class DestovkaAccessoryFilter {
     
         console.log('Filtered covers:', filtered);
         return filtered;
+    }
+
+    meetsLoadRequirements(coverLoad, requiredLoad) {
+        const loadHierarchy = [
+            'nepochozí',
+            'pochozí',
+            'pojezdná do 3,5 t',
+            'pojezdná do 12 t'
+        ];
+        
+        const requiredLoadIndex = loadHierarchy.indexOf(requiredLoad);
+        const coverLoadIndex = loadHierarchy.indexOf(coverLoad);
+        
+        // Poklop musí mít stejné nebo větší zatížení než požadované
+        return coverLoadIndex >= requiredLoadIndex;
     }
  
     getLoadIndex(loadType) {

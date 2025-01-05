@@ -148,6 +148,7 @@
 
 
     .destovka-cart-content {
+        width: 90%;
         gap: 16px;
         padding: 12px;
     }

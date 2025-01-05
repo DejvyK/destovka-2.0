@@ -5,13 +5,13 @@ class ProductStructureGenerator {
     }
     
     createProductItem(data, feedData) {
-        const imageUrl = (feedData && feedData.imageLink) ? feedData.imageLink : 'img/radoby_placeholder.png';
+        const availability = this.formatAvailability(feedData?.availability || 'out of stock');
         
         return `
             <div class="destovka-product-card" data-product-code="${data['Kód']}">
                 <div>
                     <img class="destovka-product-image"    
-                         src="${imageUrl}" 
+                         src="${feedData.imageLink}" 
                          alt="${data['Produkt']}"
                          onerror="this.src='img/delete.png'" />
                 </div>
@@ -20,50 +20,81 @@ class ProductStructureGenerator {
                         ${data['Produkt']}
                     </div>
                     <div class="destovka-product-code">kód ${data['Kód']}</div>
+                    <div class="destovka-tank-availability ${availability.className}">
+                        ${availability.text}
+                    </div>
                 </div>
                 ${this.createProductSpecs(data)}
                 <div class="destovka-product-card-footer">
                     <div class="destovka-product-price">
-                        ${this.formatPrice(feedData?.price || 'Cena na dotaz')}
+                        ${this.formatPrice(feedData?.price)}
                     </div>
-                    <button class="destovka-product-select-button">
-                        Vybrat
+                    <button class="destovka-product-select-button" ${!availability.isAvailable ? 'disabled' : ''}>
+                        ${availability.isAvailable ? 'Vybrat' : 'Nedostupné'}
                     </button>
                 </div>
             </div>
         `;
     }
 
+    formatAvailability(availability) {
+        switch (availability) {
+            case 'in stock':
+                return {
+                    text: 'Skladem',
+                    className: 'destovka-availability-instock',
+                    isAvailable: true
+                };
+            case 'out of stock':
+                return {
+                    text: 'Není skladem',
+                    className: 'destovka-availability-outstock',
+                    isAvailable: false
+                };
+            default:
+                return {
+                    text: 'Na dotaz',
+                    className: 'destovka-availability-request',
+                    isAvailable: false
+                };
+        }
+    }
+
     createPotrubiProductItem(data) {
-        const createRow = (item, feedData) => `
-            <div class="destovka-product-potrubi-card-input-row-container">
-                <div class="destovka-product-potrubi-card-input-row-title">
-                    ${item.Název}
-                </div>
-                <div class="destovka-product-potrubi-card-input-row">
-                    <div>${this.formatPrice(feedData?.price)}</div>
-                    <div class="destovka-product-potrubi-card-input-container">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                            class="bi bi-dash-circle destovka-decrease-quantity" viewBox="0 0 16 16">
-                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                            <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8" />
-                        </svg>
-                        <input type="number" 
-                               class="destovka-product-potrubi-card-input" 
-                               data-code="${item.Kód}"
-                               placeholder="0" 
-                               min="0" 
-                               value="0" />
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                            class="bi bi-plus-circle destovka-increase-quantity" viewBox="0 0 16 16">
-                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
-                        </svg>
-                        ks
+        const createRow = (item, feedData) => {
+            const availability = feedData?.availability || 'out of stock';
+            const isOutOfStock = availability === 'out of stock';
+            return `
+                <div class="destovka-product-potrubi-card-input-row-container ${isOutOfStock ? 'destovka-product-potrubi-card-container-outofstock' : ''}">
+                    <div class="destovka-product-potrubi-card-input-row-title">
+                        ${item.Název}
+                    </div>
+                    <div class="destovka-product-potrubi-card-input-row">
+                        <div>${this.formatPrice(feedData?.price)}</div>
+                        <div class="destovka-product-potrubi-card-input-container">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-dash-circle destovka-decrease-quantity" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                <path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8" />
+                            </svg>
+                            <input type="number" 
+                                   class="destovka-product-potrubi-card-input" 
+                                   data-code="${item.Kód}"
+                                   placeholder="0" 
+                                   min="0" 
+                                   value="0"
+                                   ${isOutOfStock ? 'disabled' : ''} />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-plus-circle destovka-increase-quantity" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+                            </svg>
+                            ks
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        };
     
         const representativeImage = data.feedData.get(data.items[0]?.Kód)?.imageLink || '';
     
@@ -325,9 +356,12 @@ formatAvailability(availability) {
 }
 
 
-    createGeigeryProductItem(data) {
-        const createColorInput = (variant) => `
-            <div class="destovka-product-geigery-card-input-row">
+createGeigeryProductItem(data) {
+    const createColorInput = (variant) => {
+        const availability = variant.feedData.availability || 'out of stock';
+        const isOutOfStock = availability === 'out of stock';
+        return `
+            <div class="destovka-product-geigery-card-input-row ${isOutOfStock ? 'destovka-product-geigery-card-container-outofstock' : ''}">
                 <div class="destovka-product-geigery-card-color" style="background-color: ${this.getColorCode(variant.color)}"></div>
                 <div class="destovka-product-geigery-card-input-container">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -340,7 +374,8 @@ formatAvailability(availability) {
                            data-code="${variant.code}"
                            placeholder="0"
                            min="0"
-                           value="0" />
+                           value="0"
+                           ${isOutOfStock ? 'disabled' : ''} />
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
                         class="bi bi-plus-circle destovka-increase-quantity" viewBox="0 0 16 16">
                         <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
@@ -350,57 +385,32 @@ formatAvailability(availability) {
                 </div>
             </div>
         `;
+    };
+
+    const container = document.createElement('div');
+    container.className = 'destovka-product-geigery-card-container';
+    container.dataset.type = data.type;
     
-        const container = document.createElement('div');
-        container.className = 'destovka-product-geigery-card-container';
-        container.dataset.type = data.type;
-        
-        container.innerHTML = `
-            <div class="destovka-product-geigery-card-title">${data.title}</div>
-            <div class="destovka-product-geigery-card-info-row">
-                <img src="${data.imageUrl}" alt="${data.title}" style="max-width: 200px" />
-                <div class="destovka-product-geigery-card-input-column">
-                    ${data.variants.map(variant => createColorInput(variant)).join('')}
-                </div>
+    container.innerHTML = `
+        <div class="destovka-product-geigery-card-title">${data.title}</div>
+        <div class="destovka-product-geigery-card-info-row">
+            <img src="${data.imageUrl}" alt="${data.title}" style="max-width: 200px" />
+            <div class="destovka-product-geigery-card-input-column">
+                ${data.variants.map(variant => createColorInput(variant)).join('')}
             </div>
-            <div class="destovka-product-geigery-card-footer">
-                <div class="destovka-product-geigery-card-unit-price">
-                    cena za kus ${this.formatPrice(data.variants[0].feedData.price)}
-                </div>
-                <div>
-                    celkem
-                    <span class="destovka-product-geigery-card-total-price">0 Kč</span>
-                    vč. DPH
-                </div>
+        </div>
+        <div class="destovka-product-geigery-card-footer">
+            <div class="destovka-product-geigery-card-unit-price">
+                cena za kus ${this.formatPrice(data.variants[0].feedData.price)}
             </div>
-        `;
-    
-        // Přidání event listenerů
-        const inputs = container.querySelectorAll('.destovka-product-geigery-card-input');
-        inputs.forEach(input => {
-            const decreaseBtn = input.parentElement.querySelector('.destovka-decrease-quantity');
-            const increaseBtn = input.parentElement.querySelector('.destovka-increase-quantity');
-    
-            decreaseBtn.addEventListener('click', () => {
-                if (input.value > 0) {
-                    input.value = parseInt(input.value) - 1;
-                    this.updateGeigerTotal(container);
-                }
-            });
-    
-            increaseBtn.addEventListener('click', () => {
-                input.value = parseInt(input.value) + 1;
-                this.updateGeigerTotal(container);
-            });
-    
-            input.addEventListener('change', () => {
-                if (input.value < 0) input.value = 0;
-                this.updateGeigerTotal(container);
-            });
-        });
-    
-        return container;
-    }
+            <div>
+                celkem <span class="destovka-product-geigery-card-total-price">0 Kč</span>
+            </div>
+        </div>
+    `;
+
+    return container;
+}
     
     // Přidávám pomocné metody do ProductStructureGenerator
     getColorCode(color) {
@@ -413,40 +423,41 @@ formatAvailability(availability) {
     }
     
     updateGeigerTotal(container) {
-    const inputs = container.querySelectorAll('.destovka-product-geigery-card-input');
-    let total = 0;
-
-    // Zjistit typ geigeru z nadřazeného kontejneru
-    const geigerType = container.querySelector('.destovka-product-geigery-card-title')?.textContent;
+        let total = 0;
+        const inputs = container.querySelectorAll('.destovka-product-geigery-card-input');
+        
+        const geigerType = container.querySelector('.destovka-product-geigery-card-title')?.textContent;
+        const basePrice = geigerType?.includes('Spodní výtok') ? 219 : 239;
     
-    // Nastavit základní cenu podle typu
-    const basePrice = geigerType?.includes('Spodní výtok') ? 219 : 239;
-
-    inputs.forEach(input => {
-        total += parseInt(input.value || 0) * basePrice;
-    });
-
-    const totalElement = container.querySelector('.destovka-product-geigery-card-total-price');
-    totalElement.textContent = `${total.toLocaleString('cs-CZ')} Kč`;
-
-    // Aktualizovat celkovou cenu všech geigerů
-    const allGeigersTotal = container.closest('.destovka-products-container')
-        ?.querySelector('.destovka-product-potrubi-total-price');
-    if (allGeigersTotal) {
-        const allCards = container.closest('.destovka-products-container')
-            .querySelectorAll('.destovka-product-geigery-card-container');
-        let grandTotal = 0;
-        
-        allCards.forEach(card => {
-            const priceElement = card.querySelector('.destovka-product-geigery-card-total-price');
-            if (priceElement) {
-                grandTotal += parseInt(priceElement.textContent.replace(/[^\d]/g, '')) || 0;
-            }
+        inputs.forEach(input => {
+            total += parseInt(input.value || 0) * basePrice;
         });
-        
-        allGeigersTotal.textContent = `${grandTotal.toLocaleString('cs-CZ')} Kč vč. DPH`;
+    
+        const totalElement = container.querySelector('.destovka-product-geigery-card-total-price');
+        totalElement.textContent = `${total.toLocaleString('cs-CZ')} Kč`;
+    
+        // Aktualizovat celkovou cenu všech geigerů
+        const allGeigersTotal = container.closest('.destovka-products-container')
+            ?.querySelector('.destovka-product-potrubi-total-price');
+        if (allGeigersTotal) {
+            const allCards = container.closest('.destovka-products-container')
+                .querySelectorAll('.destovka-product-geigery-card-container');
+            let grandTotal = 0;
+            
+            allCards.forEach(card => {
+                const priceElement = card.querySelector('.destovka-product-geigery-card-total-price');
+                if (priceElement) {
+                    grandTotal += parseInt(priceElement.textContent.replace(/[^\d]/g, '')) || 0;
+                }
+            });
+            
+            const withoutVAT = Math.round(grandTotal / 1.21);
+            allGeigersTotal.innerHTML = `
+                <span class="destovka-product-potrubi-total-price-without-vat">${withoutVAT.toLocaleString('cs-CZ')} Kč</span> bez DPH<br>
+                <span class="destovka-product-potrubi-total-price">${grandTotal.toLocaleString('cs-CZ')} Kč</span> vč DPH
+            `;
+        }
     }
-}
 
     createProductSpecs(data) {
         // Kontrolujeme, zda jde o plovací čerpadlo
@@ -486,7 +497,7 @@ formatAvailability(availability) {
                 </div>
                 <div class="destovka-product-card-footer">
                     <button class="destovka-product-select-button">
-                        Vybráno
+                        Vybrat
                     </button>
                 </div>
             </div>
@@ -530,7 +541,18 @@ formatAvailability(availability) {
         container.querySelectorAll('.destovka-product-select-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 const card = e.target.closest('.destovka-product-card');
-                this.selectCategory(card, container);
+                // Změněno z destovka-product-selected na destovka-category-selected
+                container.querySelectorAll('.destovka-product-card').forEach(c => {
+                    c.classList.remove('destovka-category-selected');
+                    const btn = c.querySelector('.destovka-product-select-button');
+                    btn.classList.remove('destovka-selected');
+                    btn.textContent = 'Vybrat';
+                });
+                
+                card.classList.add('destovka-category-selected');
+                button.classList.add('destovka-selected');
+                button.textContent = 'Vybráno';
+                
                 if (callback) {
                     callback(card.dataset.category);
                 }
