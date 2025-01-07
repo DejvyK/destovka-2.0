@@ -368,6 +368,16 @@ class DestovkaStepManager {
                 window.location.reload();
                 return;
             }
+
+            if (this.currentStep === 7.5) {
+                this.changeStep(7);
+                return;
+            }
+    
+            if (this.currentStep === 8) {
+                this.changeStep(7.5);
+                return;
+            }
     
             // Speciální varování pouze při návratu z kroku 2 na 1
             if (this.currentStep === 2) {
@@ -473,7 +483,7 @@ class DestovkaStepManager {
                 });
             }
         }
-        else if (this.currentStep === 3) { // Nastavce
+        else if (this.currentStep === 3) { 
             const selectedProducts = window.destovkaPotrubíManager?.getSelectedProducts() || [];
             if (selectedProducts.length > 0) {
                 selectedProducts.forEach(product => {
@@ -483,8 +493,46 @@ class DestovkaStepManager {
                 });
             }
         }
-        else if (/*this.currentStep === 3 || */this.currentStep === 4 || this.currentStep === 5 || 
-            this.currentStep === 6 || this.currentStep === 8) {
+        
+        if (this.currentStep === 6) {
+            const container = document.getElementById('destovka-step6');
+            
+            const categoriesContainer = container.querySelector('.destovka-categories-container');
+            if (categoriesContainer && categoriesContainer.style.display !== 'none') {
+                alert('Prosím vyberte kategorii čerpadla před pokračováním.');
+                return;
+            }
+        
+            const emptyProduct = container.querySelector('.destovka-empty-product');
+            if (emptyProduct && emptyProduct.classList.contains('destovka-product-selected')) {
+                this.changeStep(this.currentStep + 1);
+                return;
+            }
+        
+            const selectedPump = container.querySelector('.destovka-product-selected');
+            if (!selectedPump) {
+                alert('Prosím vyberte čerpadlo před pokračováním.');
+                return;
+            }
+            
+            // Přidáme vybrané čerpadlo do košíku s accessories
+            const productCode = selectedPump.dataset.productCode;
+            const pumpData = window.destovkaPumpManager?.pumpsData.find(p => p.Kód === productCode);
+            
+            if (pumpData) {
+                window.destovkaCart.destAddItem(6, productCode, 1, {
+                    name: pumpData.Název,
+                    type: 'pump',
+                    accessories: [
+                        pumpData.PříslušenstvíID1,
+                        pumpData.PříslušenstvíID2, 
+                        pumpData.PříslušenstvíID3
+                    ].filter(Boolean)
+                });
+            }
+        }
+
+        else if (/*this.currentStep === 3 || */this.currentStep === 4 || this.currentStep === 5 || this.currentStep === 8) {
             const container = document.getElementById(`destovka-step${this.currentStep}`);
             const productsContainer = container.querySelector('.destovka-products-container');
             
@@ -520,23 +568,20 @@ class DestovkaStepManager {
             }
         }
 
-        if (this.currentStep === 6) {
-            const container = document.getElementById('destovka-step6');
-            const productsContainer = container.querySelector('.destovka-products-container');
-            const pumpManager = window.destovkaPumpManager;
-            
-            if (pumpManager.selectedCategory !== 'Žádné') {
-                const selectedCard = productsContainer.querySelector('.destovka-product-selected:not(.destovka-category-selected)');
-                if (!selectedCard) {
-                    alert('Prosím vyberte čerpadlo před pokračováním.');
-                    return;
-                }
-                const productCode = selectedCard.dataset.productCode;
-                if (productCode) {
-                    window.destovkaCart.destAddItem(6, productCode, 1);
-                }
+        if (this.currentStep === 7) {
+            if (!window.destovkaCartDisplayIntermediate) {
+                window.destovkaCartDisplayIntermediate = new DestovkaCartDisplayManager('intermediate');
             }
+            this.changeStep(7.5);
+            return; // Přidán return pro jistotu
         }
+
+        if (this.currentStep === 7.5) {
+            this.changeStep(8);
+            return;
+        }
+
+        
      
         if (this.currentStep < this.maxSteps && this.validateStep(this.currentStep)) {
             this.saveFormData();
@@ -545,17 +590,21 @@ class DestovkaStepManager {
     }
 
     changeStep(newStep) {
-        // Hide current step
-        const currentContent = document.getElementById(`destovka-step${this.currentStep}`);
-        if (currentContent) {
-            currentContent.classList.remove('destovka-active');
-        }
-    
-        // Show new step
-        const newContent = document.getElementById(`destovka-step${newStep}`);
-        if (newContent) {
-            newContent.classList.add('destovka-active');
-        }
+        // Hide current step - upravená část
+    const currentStepId = this.currentStep.toString().replace('.', '-');  // Převede aktuální krok na formát s pomlčkou
+    const currentContent = document.getElementById(`destovka-step${currentStepId}`);
+    if (currentContent) {
+        currentContent.classList.remove('destovka-active');
+        console.log('Removing active from:', currentStepId); // Debug log
+    }
+
+    // Show new step
+    const newStepId = newStep.toString().replace('.', '-');
+    const newContent = document.getElementById(`destovka-step${newStepId}`);
+    if (newContent) {
+        newContent.classList.add('destovka-active');
+        console.log('Adding active to:', newStepId); // Debug log
+    }
 
         if (newStep === 12 && !window.destovkaCartDisplay) {
             window.destovkaCartDisplay = new DestovkaCartDisplayManager();
@@ -578,15 +627,16 @@ class DestovkaStepManager {
             window.destovkaHladinomeryManager = new DestovkaHladinomeryManager();
         }
 
+
 /*
         if (newStep === 7 && !window.destovkaPumpAccessoryManager) {
             window.destovkaPumpAccessoryManager = new DestovkaPumpAccessoryManager();
         }
 */
 
-if (newStep === 7) {
-    window.destovkaPumpAccessoryManager = new DestovkaPumpAccessoryManager();
-}
+        if (newStep === 7) {
+            window.destovkaPumpAccessoryManager = new DestovkaPumpAccessoryManager();
+        }
 
 
         if (newStep === 5 && !window.destovkaSiphonManager) {

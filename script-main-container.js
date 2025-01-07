@@ -1390,13 +1390,21 @@ class DestovkaAccessoriesManager {
      
             this.productContainer.innerHTML = content;
             this.initializeCounters();
+            
             const quantityInput = document.querySelector(".destovka-quantity-input");
-            if (quantityInput && firstExtension) {
-                const extensionHeight = parseInt(firstExtension['Výška (mm)']);
-                const neededCount = Math.ceil(heightData.missingHeight / extensionHeight);
-                quantityInput.value = Math.ceil(neededCount);
-            }
-     
+if (quantityInput && firstExtension) {
+    const extensionHeight = parseInt(firstExtension['Výška (mm)']);
+    const neededCount = Math.ceil(heightData.missingHeight / extensionHeight);
+    quantityInput.value = Math.ceil(neededCount);
+    
+    // Vyvoláme událost change, aby se aktualizovaly všechny závislé hodnoty
+    const event = new Event('change', {
+        bubbles: true,
+        cancelable: true,
+    });
+    quantityInput.dispatchEvent(event);
+}
+
         } catch (error) {
             console.error('Chyba při aktualizaci zobrazení:', error);
             this.handleError(error.message);
@@ -2420,28 +2428,24 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
 
     handleCategorySelection(category) {
         this.selectedCategory = category;
-    
-    this.categoriesContainer.style.display = 'none';
-    this.productContainer.style.display = 'flex';
-
-    if (category === 'Žádné') {
-        const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
-        currentItems.forEach(item => {
-            window.destovkaCart.destRemoveItem(item.productCode);
-        });
         
-        this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
-        const emptyCard = this.productContainer.querySelector('.destovka-product-card');
-        if (emptyCard) {
-            emptyCard.classList.add('destovka-product-selected');
-            const button = emptyCard.querySelector('.destovka-product-select-button');
-            if (button) {
-                button.textContent = 'Vybráno';
-                button.classList.add('destovka-selected');
-            }
-        }
-    } else {
+        this.categoriesContainer.style.display = 'none';
+        this.productContainer.style.display = 'flex';
+    
+        if (category === 'Žádné') {
+            
+            const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
+            currentItems.forEach(item => {
+                window.destovkaCart.destRemoveItem(item.productCode);
+            });
+            
+            this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
+            this.productGenerator.initializeSelection(this.productContainer);
+        } else {
             window.destovkaStepManager.selectedCategory = null;
+            window.destovkaCart?.destGetItemsByStep(6).forEach(item => {
+                window.destovkaCart.destRemoveItem(item.productCode);
+            });
             const categoryDescriptions = {
                 'Ponorné s plovákovým spínačem': 'Tato čerpadla fungují podle toho, jestli jsou zapojená v zásuvce a jestli mají ne/dostatek vody (to určuje plovák). V případě zapojení a dostatku vody se čerpadlo sepne, a to i v případě, že je zavřený kohout na hadici, proto této skutečnosti věnujte pozornost. Jedná se o nejlevnější typ čerpadel. Tato čerpadla jsou vhodná pro využití především k ručnímu zalévání zahrady. Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.',
                 'Ponorné s automatickým spínačem': 'Tato čerpadla fungují na principu poklesu tlaku, tedy pokud je otevřen kohoutek nebo sepnut postřikovač, tak se samo zapne a po zavření kohoutku nebo vypnutí postřikovače se samo vypne. Zároveň mají tato čerpadla instalovanou ochranu proti chodu na sucho, pokud by v nádrži došla voda. Tato čerpadla doporučujeme všem, kteří chtějí pohodlné zavlažování zahrady. Varianta čerpadla s plovoucím sáním zajišťuje čerpání nejčistší vodu z vodního sloupce nádrže, a je tedy velmi vhodná pro použití u automatického zavlažování zahrady. Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.',
@@ -2450,6 +2454,12 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             };
     
             const description = categoryDescriptions[category] || '';
+            
+            // Nejprve odstraníme existující popis, pokud existuje
+            const existingDescription = this.container.querySelector('.destovka-category-description');
+            if (existingDescription) {
+                existingDescription.remove();
+            }
             
             // Vytvoříme popis před kontejnerem produktů
             const descriptionElement = document.createElement('div');
@@ -2468,23 +2478,24 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             this.updateDisplay();
         }
     
+        // Přidáme tlačítko pro návrat pokud ještě neexistuje
         if (!this.container.querySelector('.destovka-back-to-categories')) {
             const backButton = document.createElement('button');
-        backButton.className = 'destovka-back-to-categories';
-        backButton.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Zpět na výběr kategorií
-        `;
-        backButton.addEventListener('click', () => {
-            const description = this.container.querySelector('.destovka-category-description');
-            if (description) {
-                description.remove();
-            }
-            this.showCategories();
-        });
-        this.productContainer.insertAdjacentElement('beforebegin', backButton);
+            backButton.className = 'destovka-back-to-categories';
+            backButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Zpět na výběr kategorií
+            `;
+            backButton.addEventListener('click', () => {
+                const description = this.container.querySelector('.destovka-category-description');
+                if (description) {
+                    description.remove();
+                }
+                this.showCategories();
+            });
+            this.productContainer.insertAdjacentElement('beforebegin', backButton);
         }
     }
 
@@ -2541,6 +2552,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             this.showNoResults();
             return;
         }
+
     
         // Reset containers
         this.categoriesContainer.style.display = 'none';
@@ -2560,17 +2572,39 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             );
             this.productContainer.innerHTML += productHtml;
     
-            // Přidáme specs po vytvoření karty
+            // Přidáme speciální třídu pro produkty čerpadel a specs
             const productCard = this.productContainer.querySelector(`[data-product-code="${product.Kód}"]`);
             if (productCard) {
+                productCard.classList.add('destovka-pump-product');
                 const specText = this.formatPumpSpecs(product);
                 const titleDiv = productCard.querySelector('.destovka-product-title').parentNode;
                 titleDiv.insertAdjacentHTML('afterend', `<div class="destovka-product-specs">${specText}</div>`);
             }
         });
     
-        // Inicializace event listenerů
-        this.productGenerator.initializeSelection(this.productContainer);
+        // Inicializace event listenerů pro výběr produktů
+        const productCards = this.productContainer.querySelectorAll('.destovka-product-card');
+        productCards.forEach(card => {
+            const button = card.querySelector('.destovka-product-select-button');
+            if (!button) return;
+    
+            button.addEventListener('click', () => {
+                // Odstranit výběr ze všech karet
+                productCards.forEach(otherCard => {
+                    otherCard.classList.remove('destovka-product-selected');
+                    const otherButton = otherCard.querySelector('.destovka-product-select-button');
+                    if (otherButton) {
+                        otherButton.textContent = 'Vybrat';
+                        otherButton.classList.remove('destovka-selected');
+                    }
+                });
+    
+                // Označit vybranou kartu
+                card.classList.add('destovka-product-selected');
+                button.textContent = 'Vybráno';
+                button.classList.add('destovka-selected');
+            });
+        });
     
         // Přidat tlačítko zpět pokud neexistuje
         if (!this.container.querySelector('.destovka-back-to-categories')) {
@@ -2585,6 +2619,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             backButton.addEventListener('click', () => this.showCategories());
             this.productContainer.insertAdjacentElement('beforebegin', backButton);
         }
+        
     }
 
     initializeProductSelection() {
@@ -3680,7 +3715,40 @@ class DestovkaVsakovaciManager {
         try {
             await this.loadXMLFeed();
             this.initializeContainers();
+            await this.calculator.init();
             this.showCategories();
+    
+            // Počkáme na vykreslení kategorií a pak je upravíme
+            setTimeout(() => {
+                const minArea = this.calculator.calculateMinArea();
+                const minVolume = this.calculator.calculateMinVolume();
+                // Najdeme všechny karty kategorií
+                const categoryCards = this.categoriesContainer.querySelectorAll('.destovka-product-card');
+                
+                categoryCards.forEach(card => {
+                    const category = card.dataset.category;
+                    let isRecommended = false;
+    
+                    // Určení, která kategorie má být doporučená
+                    if (minArea <= 3 && minVolume <= 3 && category === 'Vsakovací jímka') {
+                        isRecommended = true;
+                    } else if (minArea <= 7.2 && minVolume <= 7.2 && category === 'Vsakovací tunel') {
+                        isRecommended = true;
+                    } else if ((minArea > 7.2 || minVolume > 7.2) && category === 'Vsakovací box') {
+                        isRecommended = true;
+                    }
+    
+                    // Pokud má být karta doporučená, přidáme potřebné třídy a badge
+                    if (isRecommended) {
+                        card.classList.add('destovka-product-recommended');
+                        const badge = document.createElement('div');
+                        badge.className = 'destovka-product-recommend-badge';
+                        badge.textContent = 'DOPORUČUJEME';
+                        card.insertBefore(badge, card.firstChild);
+                    }
+                });
+            }, 100);
+    
         } catch (error) {
             console.error('Chyba při inicializaci VsakManager:', error);
             this.handleError();
@@ -3792,22 +3860,35 @@ class DestovkaVsakovaciManager {
     handleCategorySelection(category) {
         this.selectedCategory = category;
         
-        if (category === 'Žádné') {
-            this.categoriesContainer.style.display = 'none';
-            this.productContainer.style.display = 'flex';
-            this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
-            const emptyCard = this.productContainer.querySelector('.destovka-product-card');
-            if (emptyCard) {
-                emptyCard.classList.add('destovka-product-selected');
-                const button = emptyCard.querySelector('.destovka-product-select-button');
-                if (button) {
-                    button.textContent = 'Vybráno';
-                    button.classList.add('destovka-selected');
+        // V DestovkaPumpManager
+            if (category === 'Žádné') {
+                const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
+                currentItems.forEach(item => {
+                    window.destovkaCart.destRemoveItem(item.productCode);
+                });
+                
+                this.productContainer.innerHTML = this.productGenerator.createEmptyProductItem();
+                const emptyCard = this.productContainer.querySelector('.destovka-empty-product');
+                if (emptyCard) {
+                    const button = emptyCard.querySelector('.destovka-product-select-button');
+                    if (button) {
+                        button.addEventListener('click', () => {
+                            emptyCard.classList.add('destovka-product-selected');
+                            button.textContent = 'Vybráno';
+                            button.classList.add('destovka-selected');
+                            window.destovkaStepManager.handleNextStep();
+                        });
+                    }
                 }
             }
-        } else {
+        else {
             this.categoriesContainer.style.display = 'none';
             this.productContainer.style.display = 'flex';
+
+            const existingDescription = this.container.querySelector('.destovka-category-description');
+            if (existingDescription) {
+                existingDescription.remove();
+            }
     
             const categoryDescriptions = {
                 'Vsakovací jímka': 'Praktické provedení vsakovací jímky na dešťovou nebo odpadní vodu o objemu 500 a 1000 litrů. RUR jsou vsakovací jímky s otevřeným dnem. Vespodu má na stěnách 24 otvorů o průměru 8 cm. V horní části se nachází revizní komín o průměru 400 mm, který je možné nastavit nástavci o výšce 200 mm (maximálně 6 nástavců na 1 jímku). Na stěně vsakovací jímky v horní části jsou také čtyři montážní plochy pro otvory pro připojení svodu dešťové vody, přívodního potrubí odpadní vody nebo pro napojení více vsakovacích jímek do většího systému pomocí potrubí DN100/110, DN125 nebo DN150/160. Jímka se podsypává a obsypává kačírkem frakce 8/16 mm.',
@@ -3919,25 +4000,45 @@ getProductsFromXML() {
 
                 // Zadání doporučených hodnot přímo do inputů
 
-                                setTimeout(() => {
-                                const productInputs = this.productContainer.querySelectorAll('.destovka-product-potrubi-card-input');
-    
-                                productInputs.forEach(input => {
-                                    const productCode = input.getAttribute('data-code');
-                                    console.log('Kontrola produktu s kódem:', productCode);
-
-                                    if (productCode === 'RUR500') {
-                                        input.value = recommendation.rur500;
-                                    } else if (productCode === 'RUR1000') {
-                                        input.value = recommendation.rur1000;
-                                    } else if (productCode === 'RUR-RUE400') {
-                                        input.value = recommendation.nastavce;
-                                    } else if (productCode === 'RUR-RUA') {
-                                        input.value = recommendation.odvzduseni;
-                                    }
-                                });
-
-                            }, 500);
+                setTimeout(() => {
+                    const productInputs = this.productContainer.querySelectorAll('.destovka-product-potrubi-card-input');
+                    productInputs.forEach(input => {
+                        const productCode = input.getAttribute('data-code');
+                        if (productCode === 'RUR500') {
+                            input.value = recommendation.rur500;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
+                        } else if (productCode === 'RUR1000') {
+                            input.value = recommendation.rur1000;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
+                        } else if (productCode === 'RUR-RUE400') {
+                            input.value = recommendation.nastavce;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
+                        } else if (productCode === 'RUR-RUA') {
+                            input.value = recommendation.odvzduseni;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
+                        }
+                    });
+                }, 500);
 
 
                 recommendationHtml = `
@@ -3970,12 +4071,36 @@ getProductsFromXML() {
                         const productCode = input.getAttribute('data-code');
                         if (productCode === '231004') { // Kód pro tunely
                             input.value = recommendation.count;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
                         } else if (productCode === '230010') { // Kód pro páry čel
                             input.value = recommendation.celUzaverPairs;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
                         } else if (productCode === '231005') { // Kód pro uzávěry
-                            input.value = recommendation.celUzaverPairs; // Stejná hodnota jako páry čel
+                            input.value = recommendation.celUzaverPairs;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
                         } else if (productCode === '100200-2') { // Kód pro geotextilii
                             input.value = recommendation.geotextileArea;
+                            // Přidáno - vyvolání change eventu
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
                         }
                     });
                 }, 500);
@@ -4332,8 +4457,11 @@ getProductsFromXML() {
 }
 
 class DestovkaCartDisplayManager {
-    constructor() {
-        this.container = document.getElementById('destovka-step12');
+    constructor(type = 'final') {
+        this.type = type; // 'final' nebo 'intermediate'
+        this.container = document.getElementById(
+            this.type === 'intermediate' ? 'destovka-step7-5' : 'destovka-step12'
+        );
         this.cartGenerator = new CartStructureGenerator();
         this.feedData = new Map();
         this.init();
@@ -4457,45 +4585,43 @@ class DestovkaCartDisplayManager {
                 <button class="destovka-button destovka-button-back">
                     Předchozí krok
                 </button>
-                <button class="destovka-button destovka-button-next">
-                    Pokračovat  
-                </button>
+                ${this.type === 'intermediate' ? `
+                    <button class="destovka-button destovka-button-next">
+                        Pokračovat k dalšímu výběru
+                    </button>
+                ` : ''}
             </div>
         `;
         mainContainer.appendChild(buttonGroupContainer);
     
-        this.container.innerHTML = `
-            <div class="destovka-main-text">
-                <h1>Konečný seznam vybraných položek</h1>
-                <p>GRATULUJEME, VÁŠ VÝBĚR JE PŘIPRAVEN!
-                    Právě jste sestavili sadu nádrže a příslušenství, kterou si můžete prohlédnout a
-                    zkontrolovat níže, případně ji vložit přímo do košíku nebo si ji nechat zaslat na e-mail.
-                    Úpravy výběru můžete provádět nyní nebo i po přidání do košíku a porovnat tak
-                    různé varianty. Kompletní výběr doporučujeme odeslat na vás e-mail pro možnost
-                    vrácení se do průvodce. Máte nějaké dotazy? Neváhejte nám výběr přeposlat
-                    společně s dotazem a my se vám ozveme! U vybrané nádrže doporučujeme detailně
-                    prostudovat montážní návod, který naleznete na stránce produktu v kartě
-                    „Související soubory".</p>
-            </div>
-        `;
-        this.container.appendChild(mainContainer);
-
+        // Necháme původní HTML obsah a jen přidáme mainContainer
+        const mainText = this.container.querySelector('.destovka-main-text');
+        if (mainText) {
+            mainText.after(mainContainer);
+        } else {
+            this.container.appendChild(mainContainer);
+        }
+    
         setTimeout(() => {
-        const backButton = buttonGroupContainer.querySelector('.destovka-button-back');
-    if (backButton) {
-        backButton.addEventListener('click', () => {
-            if (window.destovkaStepManager) {
-                window.destovkaStepManager.handlePreviousStep();
+            const backButton = buttonGroupContainer.querySelector('.destovka-button-back');
+            const nextButton = buttonGroupContainer.querySelector('.destovka-button-next');
+    
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    if (window.destovkaStepManager) {
+                        window.destovkaStepManager.handlePreviousStep();
+                    }
+                });
             }
-        });
-    }
-
- },500);
-
-
-
-
-
+    
+            if (nextButton && this.type === 'intermediate') {
+                nextButton.addEventListener('click', () => {
+                    if (window.destovkaStepManager) {
+                        window.destovkaStepManager.handleNextStep();
+                    }
+                });
+            }
+        }, 500);
     }
  
     renderEmptyCart() {

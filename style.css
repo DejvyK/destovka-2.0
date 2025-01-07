@@ -2022,3 +2022,67 @@ button.destovka-accessory-select.destovka-selected {
     border-color: var(--destovka-success);
     box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1);
 }
+
+
+
+.destovka-product-recommended {
+    border: 2px solid var(--destovka-success);
+    box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1);
+}
+
+.destovka-product-recommend-badge {
+    background-color: var(--destovka-success);
+    color: white;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: -16px -16px 16px -16px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    text-align: center;
+}
+
+
+#destovka-step7-5 {
+    display: none;
+    width: 100%;
+}
+
+#destovka-step7-5.destovka-active {
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
+}
+
+#destovka-step7-5.destovka-active .destovka-cart-content {
+    display: flex;
+    flex-direction: column;
+    width: 90% ;
+}
+
+
+
+.destovka-special-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--destovka-text-color);
+    max-width: 1200px;
+    margin: 0 auto 32px auto;
+    padding: 24px;
+    background-color: var(--destovka-bg-light);
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+}
+
+
+.destovka-main-text p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--destovka-text-color);
+    max-width: 1200px;
+    margin: 0 auto 32px auto;
+    padding: 24px;
+    background-color: var(--destovka-bg-light);
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 8px;
+}

@@ -488,7 +488,7 @@ createGeigeryProductItem(data) {
  
     createEmptyProductItem() {
         return `
-            <div class="destovka-product-card">
+            <div class="destovka-product-card destovka-empty-product">
                 <div>
                     <img class="destovka-product-image" src="img/delete.png" />
                 </div>
@@ -560,22 +560,28 @@ createGeigeryProductItem(data) {
         });
     }
 
-    initializeSelection(container) {
-        if (!container) return;
-        
-        // Odstranit existující event listenery
-        container.querySelectorAll('.destovka-product-select-button').forEach(button => {
-            button.replaceWith(button.cloneNode(true));
-        });
-        
-        // Přidat nové event listenery
-        container.querySelectorAll('.destovka-product-select-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const card = e.target.closest('.destovka-product-card');
+    //V ProductStructureGenerator
+initializeSelection(container) {
+    if (!container) return;
+    
+    container.querySelectorAll('.destovka-product-select-button').forEach(button => {
+        button.replaceWith(button.cloneNode(true));
+    });
+    
+    container.querySelectorAll('.destovka-product-select-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const card = button.closest('.destovka-product-card, .destovka-empty-product');
+            if (card && card.classList.contains('destovka-empty-product')) {
+                card.classList.add('destovka-product-selected');
+                button.textContent = 'Vybráno';
+                button.classList.add('destovka-selected');
+                window.destovkaStepManager.handleNextStep();
+            } else {
                 this.selectProduct(card, container);
-            });
+            }
         });
-    }
+    });
+}
     
     selectCategory(selectedCard, container) {
         container.querySelectorAll('.destovka-product-card').forEach(card => {
