@@ -2929,6 +2929,7 @@ class DestovkaGeigeryManager extends DestovkaBaseProductManager {
     
         // Přidání celkové ceny pod všechny geigery
         const totalContainer = document.createElement('div');
+        const productContainerParent = this.productContainer.parentElement;
         totalContainer.className = 'destovka-product-potrubi-total-container';
         totalContainer.innerHTML = `
             <div class="destovka-product-potrubi-total">
@@ -3661,7 +3662,7 @@ class VsakovaciCalculator {
         const width = coordinates.x;  // X je šířka
         const length = coordinates.y; // Y je délka
         const height = floorCount;    // floor je výška
-    
+        
         // Vypočteme skutečné rozměry v metrech
         const realWidth = width * 0.6;
         const realLength = length * 0.6;
@@ -3678,7 +3679,7 @@ class VsakovaciCalculator {
             height: `${realHeight.toFixed(1)} m`
         };
     
-        return {
+        const result = {
             layout: {
                 width,
                 length,
@@ -3688,6 +3689,71 @@ class VsakovaciCalculator {
             totalBoxes: width * length * height,
             actualArea,
             actualVolume
+        };
+    
+        // Uložíme vypočtené hodnoty do instance kalkulátoru
+        this.calculatedValues = this.calculateVsakValues();
+    
+        return result;
+    }
+
+    calculateVsakValues() {
+        if (!this.boxLayout) {
+            console.warn('Box layout není k dispozici');
+            return null;
+        }
+    
+        const { coordinates, floorCount } = this.boxLayout;
+        const width = coordinates.x;  // X je šířka
+        const length = coordinates.y; // Y je délka
+        const height = floorCount;    // floor je výška
+        
+        // Reálné rozměry v metrech
+        const realWidth = width * 0.6;
+        const realLength = length * 0.6;
+        const realHeight = height * 0.4;
+    
+        // Počet boxů celkem
+        const boxesCelkem = width * length * height;
+    
+        // Výpočet objemu vsaku (m³)
+        const vsakVolume = realWidth * realLength * realHeight;
+    
+        // Výpočet plochy vsaku (m²)
+        const vsakPlocha = (realWidth * realLength) + 
+                          (0.5 * (realWidth + realLength) * realHeight);
+    
+        let count1023;
+        if (boxesCelkem <= 5) count1023 = 1;
+        else if (boxesCelkem <= 10) count1023 = 2;
+        else if (boxesCelkem <= 20) count1023 = 3;
+        else count1023 = 4;
+    
+        const count00001042 = boxesCelkem - count1023;
+        const count00010012 = 2 * (2 * (width * length) - width - length) * height;
+        const pocetmetrugeotextilie = Math.ceil(1.2 * 2 * (
+            realWidth * realLength + 
+            realWidth * realHeight + 
+            realLength * realHeight
+        ));
+        const countRURRUA = 1;
+    
+        return {
+            boxesCelkem,
+            vsakVolume,
+            vsakPlocha,
+            realDimensions: {
+                width: realWidth,
+                length: realLength,
+                height: realHeight
+            },
+            productCounts: {
+                '1023': count1023,
+                '00001042-40': count00001042,
+                '00010012': count00010012,
+                '100200-2': pocetmetrugeotextilie,
+                'RUR-RUA': countRURRUA
+            }
         };
     }
 }
@@ -3789,7 +3855,7 @@ class DestovkaVsakovaciManager {
         if (!categoriesContainer) {
             categoriesContainer = document.createElement('div');
             categoriesContainer.className = 'destovka-categories-container destovka-products-container';
-            const heading = this.container.querySelector('h1');
+            const heading = this.container.querySelector('.destovka-special-text');
             if (heading) {
                 heading.insertAdjacentElement('afterend', categoriesContainer);
             }
@@ -4132,7 +4198,13 @@ getProductsFromXML() {
                 const minArea = this.calculator.calculateMinArea();
                 const minVolume = this.calculator.calculateMinVolume();
                 const boxRecommendation = this.calculator.calculateBoxRecommendation();
-            
+                const vsakValues = this.calculator.calculateVsakValues();
+
+                console.group('Debug vsakovacích hodnot');
+                console.log('Box recommendation:', boxRecommendation);
+                console.log('Vsak values:', vsakValues);
+                console.groupEnd();
+        
                 this.productContainer.innerHTML = `
                     ${this.productGenerator.createVsakInfoBox(minArea, minVolume)}
                     ${boxRecommendation ? `
@@ -4175,7 +4247,33 @@ getProductsFromXML() {
                         </div>
                     </div>
                 `;
-            
+        
+                // Timeout pro nastavení hodnot do inputů
+                // V updateDisplay ve třídě DestovkaVsakovaciManager
+                setTimeout(() => {
+                    if (vsakValues && vsakValues.productCounts) {
+                        const productInputs = this.productContainer.querySelectorAll('.destovka-vsakbox-product-input');
+                        console.log('Nalezené inputy:', productInputs);
+                        
+                        productInputs.forEach(input => {
+                            const code = input.dataset.code;
+                            console.log('Zpracovávám input s kódem:', code);
+                            console.log('Hodnota pro tento kód:', vsakValues.productCounts[code]);
+                            
+                            if (vsakValues.productCounts[code] !== undefined) {
+                                console.log(`Nastavuji hodnotu ${vsakValues.productCounts[code]} pro kód ${code}`);
+                                input.value = vsakValues.productCounts[code];
+                                
+                                const event = new Event('change', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                });
+                                input.dispatchEvent(event);
+                            }
+                        });
+                    }
+                }, 500);
+        
                 // Inicializace ovládacích prvků
                 this.initializeVsakBoxGridControls();
                 this.initializeVsakBoxCounters();

@@ -808,6 +808,7 @@ body {
     color: var(--destovka-text-color);
     margin: 0;
     padding: 0 0 16px 0;
+    text-align: center;
 }
 
 .destovka-product-potrubi-card-container {
@@ -873,6 +874,7 @@ body {
     display: flex;
     justify-content: flex-end;
     padding: 24px 0;
+    max-width: 1150px;
 }
 
 .destovka-product-potrubi-total {
