@@ -1227,7 +1227,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1px;
-    border: 1px solid #000;
+    border: 1px solid lightgray;
 }
 
 .destovka-vsakbox-grid-row {
@@ -2087,4 +2087,38 @@ button.destovka-accessory-select.destovka-selected {
     background-color: var(--destovka-bg-light);
     border: 1px solid var(--destovka-border-color);
     border-radius: 8px;
+}
+
+
+.destovka-vsakbox-product-counter {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.destovka-vsakbox-product-counter input {
+    width: 80px;
+    height: 40px;
+    border: 1px solid var(--destovka-border-color);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 16px;
+    pointer-events: none;
+    background-color: var(--destovka-bg-light);
+    color: var(--destovka-text-color);
+    font-weight: 500;
+    cursor: default;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.destovka-vsakbox-product-counter input:focus {
+    outline: none;
+}
+
+.destovka-vsakbox-product-unit {
+    color: var(--destovka-inactive);
+    font-size: 14px;
 }

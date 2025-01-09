@@ -4213,8 +4213,14 @@ getProductsFromXML() {
                                 Doporučené rozložení vsakovacích boxů:
                             </div>
                             <div class="destovka-vsak-recommendation-content">
-                                ${boxRecommendation.layout.width}× ${boxRecommendation.layout.length}× ${boxRecommendation.layout.height} 
-                                (${boxRecommendation.totalBoxes} ks)
+                                ${vsakValues ? `
+                                    <div class="destovka-vsak-recommendation-products">
+                                        ${vsakValues.productCounts['1023'] > 0 ? `${vsakValues.productCounts['1023']}× modul s kanálkem` : ''}
+                                        ${vsakValues.productCounts['00001042-40'] > 0 ? `, ${vsakValues.productCounts['00001042-40']}× modul` : ''}
+                                        ${vsakValues.productCounts['00010012'] > 0 ? `, ${vsakValues.productCounts['00010012']}× konektor` : ''}
+                                        ${vsakValues.productCounts['100200-2'] > 0 ? `, ${vsakValues.productCounts['100200-2']} m² geotextilie` : ''}
+                                        ${vsakValues.productCounts['RUR-RUA'] > 0 ? `, ${vsakValues.productCounts['RUR-RUA']}× odvzdušnění` : ''}
+                                    </div>` : ''}
                             </div>
                             <div class="destovka-vsak-recommendation-details">
                                 Rozměry systému:
@@ -4338,48 +4344,77 @@ getProductsFromXML() {
     initializeVsakBoxGridControls() {
         const controls = this.container.querySelectorAll('.destovka-vsakbox-counter');
         
+        const recalculateAndUpdateInputs = () => {
+            // Získáme aktuální hodnoty
+            const lengthInput = this.container.querySelector('[data-dimension="length"]');
+            const widthInput = this.container.querySelector('[data-dimension="width"]');
+            const heightInput = this.container.querySelector('[data-dimension="height"]');
+            
+            if (!lengthInput || !widthInput || !heightInput) return;
+    
+            // Aktualizujeme boxLayout v calculatoru
+            this.calculator.boxLayout = {
+                coordinates: {
+                    x: parseInt(widthInput.value),
+                    y: parseInt(lengthInput.value)
+                },
+                floorCount: parseInt(heightInput.value)
+            };
+    
+            // Získáme nové hodnoty
+            const vsakValues = this.calculator.calculateVsakValues();
+    
+            // Nastavíme nové hodnoty do inputů
+            setTimeout(() => {
+                if (vsakValues && vsakValues.productCounts) {
+                    const productInputs = this.productContainer.querySelectorAll('.destovka-vsakbox-product-input');
+                    
+                    productInputs.forEach(input => {
+                        const code = input.dataset.code;
+                        if (vsakValues.productCounts[code] !== undefined) {
+                            input.value = vsakValues.productCounts[code];
+                            
+                            const event = new Event('change', {
+                                bubbles: true,
+                                cancelable: true,
+                            });
+                            input.dispatchEvent(event);
+                        }
+                    });
+                }
+            }, 500);
+        };
+    
         controls.forEach(control => {
             const input = control.querySelector('.destovka-vsakbox-input');
             const minusBtn = control.querySelector('.destovka-vsakbox-minus');
             const plusBtn = control.querySelector('.destovka-vsakbox-plus');
             
-            // Přidám logování pro debugování
-            console.log('Initializing control:', {
-                dimension: input.dataset.dimension,
-                min: input.min,
-                max: input.max,
-                currentValue: input.value
-            });
+            if (!input || !minusBtn || !plusBtn) return;
     
             const updateGrid = () => {
                 const dimension = input.dataset.dimension;
                 const value = parseInt(input.value);
                 const measureSpan = control.parentElement.querySelector('.destovka-vsakbox-measure');
                 
-                // Kontrola platnosti hodnoty
                 if (isNaN(value)) return;
     
-                // Aktualizace zobrazení měr
-                if (dimension === 'height') {
-                    measureSpan.textContent = `${(value * 0.4).toFixed(1)} m`;
-                } else {
-                    measureSpan.textContent = `${(value * 0.6).toFixed(1)} m`;
+                if (measureSpan) {
+                    if (dimension === 'height') {
+                        measureSpan.textContent = `${(value * 0.4).toFixed(1)} m`;
+                    } else {
+                        measureSpan.textContent = `${(value * 0.6).toFixed(1)} m`;
+                    }
                 }
                 
                 this.updateGridVisualization();
+                recalculateAndUpdateInputs(); // Zavolá přepočet a aktualizaci inputů
             };
     
             plusBtn.addEventListener('click', () => {
                 const currentValue = parseInt(input.value);
                 const maxValue = parseInt(input.max);
                 
-                // Přidám logování pro debugování
-                console.log('Plus clicked:', {
-                    currentValue,
-                    maxValue,
-                    dimension: input.dataset.dimension
-                });
-    
                 if (currentValue < maxValue) {
                     input.value = currentValue + 1;
                     updateGrid();
@@ -4396,21 +4431,7 @@ getProductsFromXML() {
                 }
             });
     
-            input.addEventListener('change', (e) => {
-                let value = parseInt(input.value);
-                const minValue = parseInt(input.min);
-                const maxValue = parseInt(input.max);
-                
-                // Ošetření hodnoty
-                if (isNaN(value)) value = minValue;
-                value = Math.max(minValue, Math.min(maxValue, value));
-                
-                input.value = value;
-                updateGrid();
-            });
-    
-            // Inicializace počátečního stavu
-            updateGrid();
+            input.addEventListener('change', updateGrid);
         });
     }
     
