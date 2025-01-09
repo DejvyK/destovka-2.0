@@ -1941,7 +1941,8 @@ button.destovka-accessory-select.destovka-selected {
 .destovka-product-potrubi-total {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
+    text-align: end;
 }
 
 .destovka-category-description {
