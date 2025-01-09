@@ -1438,8 +1438,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 32px;
-    width: 60%;
-    max-width: 1500px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 24px 0;
 }
@@ -2058,7 +2057,6 @@ button.destovka-accessory-select.destovka-selected {
 #destovka-step7-5.destovka-active .destovka-cart-content {
     display: flex;
     flex-direction: column;
-    width: 90% ;
 }
 
 
