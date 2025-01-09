@@ -1537,7 +1537,6 @@ body {
     align-items: flex-end;
     gap: 16px;
     padding: 24px;
-    border-top: 1px solid var(--destovka-border-color);
     font-size: 16px;
     color: var(--destovka-text-color);
 }
@@ -1841,8 +1840,7 @@ body {
     align-items: flex-start;
     width: 100%;
     gap: 32px;
-    padding: 24px;
-    border-top: 1px solid var(--destovka-border-color);
+    padding: 0;
 }
 
 .destovka-cart-total-buttons {
@@ -1850,6 +1848,7 @@ body {
     flex-direction: column;
     gap: 12px;
     min-width: 280px;
+    align-self: flex-end;
 }
 
 .destovka-cart-action-button {
