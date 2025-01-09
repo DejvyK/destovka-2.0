@@ -167,7 +167,6 @@
 
 
     .destovka-cart-content {
-        width: 90%;
         gap: 16px;
         padding: 12px;
     }
@@ -240,6 +239,10 @@
         justify-content: space-between;
         padding: 4px 0;
         border-bottom: 1px solid var(--destovka-border-color);
+    }
+
+    .destovka-cart-total-wrapper > div:first-child {
+        display: block;
     }
 
     .destovka-cart-total-wrapper > div:last-child {
@@ -516,10 +519,6 @@
 
 
 @media (max-width: 576px) {
-    .destovka-cart-content {
-        padding: 30px;
-    }
-
     .destovka-cart-card-container {
         padding: 20px;
     }
