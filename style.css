@@ -1093,6 +1093,7 @@ body {
 
 .destovka-height-info {
     width: 100%;
+    max-width: 1200px;
     display: flex;
     gap: 24px;
     padding: 16px;
