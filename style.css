@@ -1384,6 +1384,7 @@ body {
 }
 
 .destovka-quantity-controls {
+    height: 100%;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -1743,6 +1744,7 @@ body {
     display: flex;
     gap: 8px;
     align-items: center;
+    align-self: flex-end;
 }
 
 .destovka-quantity-input {
@@ -1752,6 +1754,14 @@ body {
     border-radius: 6px;
     text-align: center;
     font-size: 16px;
+
+    -moz-appearance: textfield;
+}
+
+.destovka-quantity-input::-webkit-outer-spin-button,
+.destovka-quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .destovka-quantity-controls {
