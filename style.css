@@ -1421,7 +1421,7 @@ body {
 
 .destovka-products-container {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
 }
 
@@ -1983,16 +1983,6 @@ button.destovka-accessory-select.destovka-selected {
 }
 }
 
-
-
-#destovka-step4 .destovka-product-card,
-#destovka-step7 .destovka-product-card,
-#destovka-step8 .destovka-product-card {
-    height: 430px;
-}
-#destovka-step5 .destovka-product-card {
-    height: 430px;
-}
 
 #destovka-step12 h1 {
     text-align: center;
