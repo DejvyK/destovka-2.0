@@ -2076,6 +2076,7 @@ button.destovka-accessory-select.destovka-selected {
 
 
 .destovka-main-text p {
+    width: 100%;
     font-size: 16px;
     line-height: 1.6;
     color: var(--destovka-text-color);
