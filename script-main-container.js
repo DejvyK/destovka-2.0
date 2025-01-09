@@ -2933,7 +2933,7 @@ class DestovkaGeigeryManager extends DestovkaBaseProductManager {
         totalContainer.className = 'destovka-product-potrubi-total-container';
         totalContainer.innerHTML = `
             <div class="destovka-product-potrubi-total">
-                Celková cena: <span class="destovka-product-potrubi-total-price"></span>
+                Celková cena <span class="destovka-product-potrubi-total-price"></span>
             </div>
         `;
         this.productContainer.appendChild(totalContainer);
@@ -3145,7 +3145,7 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
             ${allColumnsHTML}
             <div class="destovka-product-potrubi-total-container">
                 <div class="destovka-product-potrubi-total">
-                    Celková cena: <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
+                    Celková cena <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
                 </div>
             </div>
         `;
@@ -4310,7 +4310,7 @@ getProductsFromXML() {
                     </div>
                     <div class="destovka-product-potrubi-total-container">
                         <div class="destovka-product-potrubi-total">
-                            Celková cena: <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
+                            Celková cena <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
                         </div>
                     </div>
                 `;

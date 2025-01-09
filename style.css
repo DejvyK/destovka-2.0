@@ -536,6 +536,7 @@ body {
     padding: 5px;
     width: 100%;
     min-width: 120px;
+    background: transparent;
 }
 
 
@@ -1095,6 +1096,7 @@ body {
 
 .destovka-height-info {
     width: 100%;
+    max-width: 1200px;
     display: flex;
     gap: 24px;
     padding: 16px;
@@ -1385,6 +1387,7 @@ body {
 }
 
 .destovka-quantity-controls {
+    height: 100%;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -1421,7 +1424,7 @@ body {
 
 .destovka-products-container {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
 }
 
@@ -1438,8 +1441,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 32px;
-    width: 60%;
-    max-width: 1500px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 24px 0;
 }
@@ -1537,7 +1539,6 @@ body {
     align-items: flex-end;
     gap: 16px;
     padding: 24px;
-    border-top: 1px solid var(--destovka-border-color);
     font-size: 16px;
     color: var(--destovka-text-color);
 }
@@ -1744,6 +1745,7 @@ body {
     display: flex;
     gap: 8px;
     align-items: center;
+    align-self: flex-end;
 }
 
 .destovka-quantity-input {
@@ -1753,6 +1755,14 @@ body {
     border-radius: 6px;
     text-align: center;
     font-size: 16px;
+
+    -moz-appearance: textfield;
+}
+
+.destovka-quantity-input::-webkit-outer-spin-button,
+.destovka-quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .destovka-quantity-controls {
@@ -1832,8 +1842,7 @@ body {
     align-items: flex-start;
     width: 100%;
     gap: 32px;
-    padding: 24px;
-    border-top: 1px solid var(--destovka-border-color);
+    padding: 0;
 }
 
 .destovka-cart-total-buttons {
@@ -1841,6 +1850,7 @@ body {
     flex-direction: column;
     gap: 12px;
     min-width: 280px;
+    align-self: flex-end;
 }
 
 .destovka-cart-action-button {
@@ -1933,7 +1943,8 @@ button.destovka-accessory-select.destovka-selected {
 .destovka-product-potrubi-total {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
+    text-align: end;
 }
 
 .destovka-category-description {
@@ -1975,16 +1986,6 @@ button.destovka-accessory-select.destovka-selected {
 }
 
 
-
-#destovka-step4 .destovka-product-card,
-#destovka-step7 .destovka-product-card,
-#destovka-step8 .destovka-product-card {
-    height: 430px;
-}
-#destovka-step5 .destovka-product-card {
-    height: 430px;
-}
-
 #destovka-step12 h1 {
     text-align: center;
     margin-top: 40px;
@@ -1993,16 +1994,16 @@ button.destovka-accessory-select.destovka-selected {
 
 @media (max-width:992px ){
     #destovka-step7 .destovka-product-card {
-        height: 420px;
+        min-height: 420px;
     }
 
     #destovka-step4 .destovka-product-card,
     #destovka-step8 .destovka-product-card {
-        height: 380px;
+        min-height: 380px;
     }
 
     #destovka-step5 .destovka-product-card {
-        height: 365px;
+        min-height: 365px;
     }
     
 }
@@ -2059,7 +2060,6 @@ button.destovka-accessory-select.destovka-selected {
 #destovka-step7-5.destovka-active .destovka-cart-content {
     display: flex;
     flex-direction: column;
-    width: 90% ;
 }
 
 
@@ -2078,6 +2078,7 @@ button.destovka-accessory-select.destovka-selected {
 
 
 .destovka-main-text p {
+    width: 100%;
     font-size: 16px;
     line-height: 1.6;
     color: var(--destovka-text-color);

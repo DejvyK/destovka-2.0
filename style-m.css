@@ -167,7 +167,6 @@
 
 
     .destovka-cart-content {
-        width: 90%;
         gap: 16px;
         padding: 12px;
     }
@@ -242,6 +241,10 @@
         border-bottom: 1px solid var(--destovka-border-color);
     }
 
+    .destovka-cart-total-wrapper > div:first-child {
+        display: block;
+    }
+
     .destovka-cart-total-wrapper > div:last-child {
         border-bottom: none;
     }
@@ -283,6 +286,10 @@
     .destovka-cart-empty p,
     .destovka-cart-error p {
         font-size: 16px;
+    }
+
+    .destovka-product-geigery-card-footer > div {
+        flex: 1;
     }
   }
 
@@ -516,10 +523,6 @@
 
 
 @media (max-width: 576px) {
-    .destovka-cart-content {
-        padding: 30px;
-    }
-
     .destovka-cart-card-container {
         padding: 20px;
     }
