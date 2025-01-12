@@ -394,17 +394,36 @@ class DestovkaTankFilter {
             return false;
         }
     
-        // 3. Kontrola hloubky nátoku vs max překrytí zeminou
+         // 3. Kontrola hloubky nátoku vs max překrytí zeminou
         const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']); 
-        if (this.requiredInflowDepth > maxCovering) {
-            console.log(`Tank ${tank['Kód']} filtered out: Required depth ${this.requiredInflowDepth} exceeds max covering ${maxCovering}`);
+        const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
+        const inflowOffsetFromTop = parseFloat(tank['Výška umístění nátoku vůči stropu nádrže'] || "0");
+        const actualInflowDepth = defaultInflowDepth + inflowOffsetFromTop;
+
+        if (this.requiredInflowDepth + inflowOffsetFromTop > maxCovering) {
+            console.log(`Tank ${tank['Kód']} filtered out: Required depth with offset exceeds max covering`);
             return false;
         }
-    
+
+
+        //3a - max zatopení nádrže spodní vodou. 
+        const maxFloodingHeight = parseFloat(tank['Max. výška zatopení nádrže spodní vodou (mm)']);
+        const requiredFloodingHeight = parseFloat(this.formData.get('hsvDepth') || '0'); // přichází v mm
+        
+        if (maxFloodingHeight < requiredFloodingHeight && requiredFloodingHeight > 0) {
+            console.log(`Tank ${tank['Kód']} filtered out: Max flooding height (${maxFloodingHeight}) is less than required (${requiredFloodingHeight})`);
+            return false;
+        }
+
         // 4. Kontrola defaultInflowDepth
-        const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
-        if (defaultInflowDepth > this.requiredInflowDepth) {
-            console.log(`Tank ${tank['Kód']} filtered out: Default inflow depth ${defaultInflowDepth} is greater than required ${this.requiredInflowDepth}`);
+        if (actualInflowDepth > this.requiredInflowDepth) {
+            console.log(`Tank ${tank['Kód']} filtered out: Actual inflow depth is greater than required`);
+            return false;
+        }
+
+        // 5. Kontrola actual inflow depth vs max covering
+        if (actualInflowDepth > maxCovering) {
+            console.log(`Tank ${tank['Kód']} filtered out: Actual inflow depth exceeds max covering`);
             return false;
         }
     
@@ -549,7 +568,8 @@ class DestovkaTankFilter {
         this.extensionCalculator = new ExtensionCalculator(
             tank['Systém'],
             this.requiredInflowDepth,
-            parseFloat(tank['Hloubka nátoku bez nástavce (mm)'])
+            parseFloat(tank['Hloubka nátoku bez nástavce (mm)']),
+            parseFloat(tank['Výška umístění nátoku vůči stropu nádrže'] || "0")
         );
 
         const result = await this.extensionCalculator.findExtensionCombinations();
@@ -654,6 +674,8 @@ class DestovkaTankFilter {
     calculateEarthworksScore(tank) {
         const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']);
         const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
+        const inflowOffsetFromTop = parseFloat(tank['Výška umístění nátoku vůči stropu nádrže'] || "0");
+        const actualInflowDepth = defaultInflowDepth + inflowOffsetFromTop;
         
         // Skóre za překrytí zeminou (max 0.5)
         const coveringScore = Math.max(0, 1 - 
@@ -661,7 +683,7 @@ class DestovkaTankFilter {
         
         // Skóre za hloubku nátoku (max 0.5)
         const depthScore = Math.max(0, 1 - 
-            Math.abs(defaultInflowDepth - this.requiredInflowDepth) / this.requiredInflowDepth) * 0.5;
+            Math.abs(actualInflowDepth - this.requiredInflowDepth) / this.requiredInflowDepth) * 0.5;
         
         return coveringScore + depthScore;
     }
@@ -750,7 +772,7 @@ class DestovkaTankManager {
     }
 
     async fetchJSON() {
-        const response = await fetch('jsony/nadrze_sorted.json');
+        const response = await fetch('jsony/nadrze_12_01.json');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -1170,25 +1192,30 @@ class DestovkaAccessoriesManager {
     calculateHeights() {
         const selectedTank = window.destovkaCart?.destGetItemsByStep(2)[0];
         if (!selectedTank) return null;
-
+    
         const tankData = window.destovkaTankManager?.tanksData.find(
             tank => tank['Kód'] === selectedTank.productCode
         );
         if (!tankData) return null;
-
+    
         const inflowDepth = parseInt(window.destovkaStepManager?.formData.get('inflowDepth'));
         const tankHeight = selectedTank.height || 0;
-
+        const inflowOffsetFromTop = parseFloat(tankData['Výška umístění nátoku vůči stropu nádrže'] || "0");
+    
         // Cover je opcionální
         const selectedCover = window.destovkaCart?.destGetItemsByStep(2)[1];
         const coverHeight = selectedCover?.height || 0;
-
-        const missingHeight = Math.max(0, inflowDepth - tankHeight - coverHeight);
-
+    
+        // Přepočítáváme skutečnou výšku s ohledem na offset
+        const actualInflowDepth = tankHeight + inflowOffsetFromTop;
+        const missingHeight = Math.max(0, inflowDepth - actualInflowDepth - coverHeight);
+    
         return {
             inflowDepth,
             tankHeight,
             coverHeight,
+            inflowOffsetFromTop,
+            actualInflowDepth,
             missingHeight,
             tankSystem: tankData['Systém']
         };
@@ -1551,40 +1578,82 @@ if (quantityInput && firstExtension) {
 
     async processExtensionCalculations(heightData) {
         try {
-            // Pokud máme chybějící výšku, vždy potřebujeme nástavec
             if (heightData.missingHeight > 0) {
-                const calculator = new ExtensionCalculator(
-                    heightData.tankSystem,
-                    heightData.missingHeight,
-                    heightData.inflowDepth,
-                    this.accessoriesData
-                );
-    
-                const result = await calculator.findExtensionCombinations();
-                
-                // Pokud najdeme kombinace, vrátíme je
-                if (result.combinations && result.combinations.length > 0) {
-                    return result;
-                }
-    
-                // Jinak vrátíme všechny kompatibilní nástavce pro tento systém
+                // Používáme existující filtrovací metodu pro získání nástavců
                 const compatibleExtensions = this.getCompatibleExtensions(heightData);
-                if (compatibleExtensions.length > 0) {
+                
+                if (compatibleExtensions.length === 0) {
                     return {
-                        combinations: compatibleExtensions.map(ext => ({
-                            extensions: [ext],
-                            totalHeight: parseInt(ext['Výška (mm)']),
-                            needsCutting: parseInt(ext['Výška (mm)']) > heightData.missingHeight,
-                            cutAmount: Math.max(0, parseInt(ext['Výška (mm)']) - heightData.missingHeight)
-                        }))
+                        error: true,
+                        message: 'Pro tento systém nejsou k dispozici žádné nástavce'
                     };
                 }
+    
+                // Seřadíme nástavce podle výšky
+                const sortedExtensions = compatibleExtensions.sort((a, b) => 
+                    parseInt(a['Výška (mm)']) - parseInt(b['Výška (mm)'])
+                );
+    
+                // 1. Pokus: Najít jeden nástavec, který pokryje celou výšku
+                const singleExtension = sortedExtensions.find(ext => 
+                    parseInt(ext['Výška (mm)']) >= heightData.missingHeight
+                );
+    
+                if (singleExtension) {
+                    return {
+                        combinations: [{
+                            extensions: [singleExtension],
+                            totalHeight: parseInt(singleExtension['Výška (mm)']),
+                            needsCutting: true,
+                            cutAmount: parseInt(singleExtension['Výška (mm)']) - heightData.missingHeight
+                        }]
+                    };
+                }
+    
+                // 2. Pokus: Najít kombinaci dvou nástavců
+                let bestCombination = null;
+                let smallestOverage = Infinity;
+    
+                for (let i = 0; i < sortedExtensions.length; i++) {
+                    for (let j = i; j < sortedExtensions.length; j++) {
+                        const ext1 = sortedExtensions[i];
+                        const ext2 = sortedExtensions[j];
+                        
+                        const combinedHeight = parseInt(ext1['Výška (mm)']) + parseInt(ext2['Výška (mm)']);
+                        const overage = combinedHeight - heightData.missingHeight;
+                        
+                        if (overage >= 0 && overage < smallestOverage) {
+                            smallestOverage = overage;
+                            bestCombination = {
+                                extensions: [ext1, ext2],
+                                totalHeight: combinedHeight,
+                                needsCutting: true,
+                                cutAmount: overage
+                            };
+                        }
+                    }
+                }
+    
+                if (bestCombination) {
+                    return {
+                        combinations: [bestCombination]
+                    };
+                }
+    
+                // 3. Pokud nic nevyšlo, vrátíme všechny kompatibilní nástavce
+                return {
+                    combinations: sortedExtensions.map(ext => ({
+                        extensions: [ext],
+                        totalHeight: parseInt(ext['Výška (mm)']),
+                        needsCutting: parseInt(ext['Výška (mm)']) > heightData.missingHeight,
+                        cutAmount: Math.max(0, parseInt(ext['Výška (mm)']) - heightData.missingHeight)
+                    }))
+                };
             }
     
-            // Pokud nenajdeme žádné nástavce
             return {
                 error: true,
-                message: 'Pro tento systém nejsou k dispozici žádné vhodné nástavce'
+                message: 'Není potřeba přidávat nástavce'
             };
     
         } catch (error) {
@@ -1639,24 +1708,29 @@ if (quantityInput && firstExtension) {
 }
 
 class ExtensionCalculator {
-    constructor(tankSystem, requiredDepth, tankDefaultDepth, existingExtensions) {
+    constructor(tankSystem, requiredDepth, tankDefaultDepth, inflowOffsetFromTop, existingExtensions) {
         console.group('🔧 Initializing ExtensionCalculator');
         console.log('Parameters:', {
             tankSystem,
             requiredDepth,
             tankDefaultDepth,
+            inflowOffsetFromTop,
             extensionsProvided: !!existingExtensions
         });
-
+     
         if (!tankSystem) throw new Error('Systém nádrže musí být specifikován');
-        if (isNaN(requiredDepth) || isNaN(tankDefaultDepth)) {
+        if (isNaN(requiredDepth) || isNaN(tankDefaultDepth) || isNaN(inflowOffsetFromTop)) {
             throw new Error('Hloubky musí být čísla');
         }
-
+     
         this.tankSystem = tankSystem;
         this.requiredDepth = parseFloat(requiredDepth);
         this.tankDefaultDepth = parseFloat(tankDefaultDepth);
-        this.missingDepth = this.requiredDepth - this.tankDefaultDepth;
+        this.inflowOffsetFromTop = parseFloat(inflowOffsetFromTop);
+        
+        // Přepočítáváme skutečnou výšku s ohledem na offset
+        const actualTankDepth = this.tankDefaultDepth + this.inflowOffsetFromTop;
+        this.missingDepth = this.requiredDepth - actualTankDepth;
         
         // Použijeme již načtená data místo nového načítání
         this.availableExtensions = (existingExtensions || [])
@@ -1668,13 +1742,15 @@ class ExtensionCalculator {
                 name: ext.Název
             }))
             .sort((a, b) => a.height - b.height);
-
+     
         console.log('Initialized with:', {
+            actualTankDepth,
             missingDepth: this.missingDepth,
+            inflowOffsetFromTop: this.inflowOffsetFromTop,
             availableExtensions: this.availableExtensions.length
         });
         console.groupEnd();
-    }
+     }
 
     async initialize() {
         console.log("checkopint1");

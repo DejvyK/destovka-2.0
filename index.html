@@ -37,14 +37,15 @@
                         <script>
                             document.querySelector('.destovka-autofill-button').addEventListener('click', () => {
                             const sampleData = {
-                                volumeRange: 3500,      // Změněno z 3000 na 3500 aby se zobrazily nádrže kolem této hodnoty
+                                volumeRange: 1400,      // Změněno z 3000 na 3500 aby se zobrazily nádrže kolem této hodnoty
                                 concrete: 'yes',  
-                                soil: 'clay',
-                                hsvDepth: 10,
+                                soil: 'gravel',
+                                hsvDepth: 0,
                                 load: 'pochozí',     // Ponecháno pochozí - zobrazí se i nádrže s vyšší nosností
                                 inflowDiameter: '100/110',      
                                 outflowDiameter: '100/110',     
-                                inflowDepth: 92
+                                inflowDepth: 50,
+                                rainfallStation: 1
                             };
                         
                             Object.entries(sampleData).forEach(([id, value]) => {
