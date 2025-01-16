@@ -561,27 +561,44 @@ createGeigeryProductItem(data) {
     }
 
     //V ProductStructureGenerator
-initializeSelection(container) {
-    if (!container) return;
-    
-    container.querySelectorAll('.destovka-product-select-button').forEach(button => {
-        button.replaceWith(button.cloneNode(true));
-    });
-    
-    container.querySelectorAll('.destovka-product-select-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const card = button.closest('.destovka-product-card, .destovka-empty-product');
-            if (card && card.classList.contains('destovka-empty-product')) {
-                card.classList.add('destovka-product-selected');
-                button.textContent = 'Vybráno';
-                button.classList.add('destovka-selected');
-                window.destovkaStepManager.handleNextStep();
+    initializeSelection(container) {
+        if (!container) return;
+        
+        // Nejdřív označíme všechny nedostupné produkty persistentní třídou
+        container.querySelectorAll('.destovka-product-select-button[disabled]').forEach(button => {
+            button.closest('.destovka-product-card').classList.add('destovka-product-unavailable');
+        });
+        
+        container.querySelectorAll('.destovka-product-select-button').forEach(button => {
+            button.replaceWith(button.cloneNode(true));
+        });
+        
+        container.querySelectorAll('.destovka-product-select-button').forEach(button => {
+            const card = button.closest('.destovka-product-card');
+            // Kontrolujeme, zda produkt není označen jako nedostupný
+            if (!card.classList.contains('destovka-product-unavailable')) {
+                button.addEventListener('click', () => {
+                    if (card.classList.contains('destovka-empty-product')) {
+                        const currentStep = window.destovkaStepManager?.currentStep;
+                        if (currentStep === 6 || currentStep === 11) {
+                            card.classList.add('destovka-product-selected');
+                            button.textContent = 'Vybráno';
+                            button.classList.add('destovka-selected');
+                            window.destovkaStepManager.handleNextStep();
+                        } else {
+                            this.selectProduct(card, container);
+                        }
+                    } else {
+                        this.selectProduct(card, container);
+                    }
+                });
             } else {
-                this.selectProduct(card, container);
+                // Pro nedostupné produkty zajistíme, že zůstanou disabled
+                button.setAttribute('disabled', '');
+                button.textContent = 'Nedostupné';
             }
         });
-    });
-}
+    }
     
     selectCategory(selectedCard, container) {
         container.querySelectorAll('.destovka-product-card').forEach(card => {
@@ -598,19 +615,23 @@ initializeSelection(container) {
     }
  
     selectProduct(selectedCard, container) {
-        // Zrušit předchozí výběr
+        // Zrušit předchozí výběr pouze pro dostupné produkty
         container.querySelectorAll('.destovka-product-card').forEach(card => {
-            card.classList.remove('destovka-product-selected');
-            const button = card.querySelector('.destovka-product-select-button');
-            button.textContent = 'Vybrat';
-            button.classList.remove('destovka-selected');
+            if (!card.classList.contains('destovka-product-unavailable')) {
+                card.classList.remove('destovka-product-selected');
+                const button = card.querySelector('.destovka-product-select-button');
+                button.textContent = 'Vybrat';
+                button.classList.remove('destovka-selected');
+            }
         });
     
         // Nastavit nový výběr
-        selectedCard.classList.add('destovka-product-selected');
-        const button = selectedCard.querySelector('.destovka-product-select-button');
-        button.textContent = 'Vybráno';
-        button.classList.add('destovka-selected');
+        if (selectedCard) {
+            selectedCard.classList.add('destovka-product-selected');
+            const button = selectedCard.querySelector('.destovka-product-select-button');
+            button.textContent = 'Vybráno';
+            button.classList.add('destovka-selected');
+        }
     }
  
     getSelectedProduct(container) {

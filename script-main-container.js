@@ -377,6 +377,7 @@ class DestovkaTankFilter {
 
     async passesCriticalFilters(tank) {
         // Kontrola dostupnosti
+        const formData = window.destovkaStepManager?.formData;
         const availability = window.destovkaTankManager?.feedData.get(tank['Kód'])?.availability;
         if (availability !== 'in stock') {
             console.log(`Tank ${tank['Kód']} filtered out: Not in stock (${availability})`);
@@ -393,6 +394,31 @@ class DestovkaTankFilter {
             console.log(`Tank ${tank['Kód']} filtered out: Failed load check`);
             return false;
         }
+
+        const requiredLoad = formData.get('load');
+        const requiredVolume = parseInt(formData.get('volume'));
+
+        // Kontrola zatížení a systému
+        if (requiredLoad === 'pojezdná do 3,5 t' || 
+            requiredLoad === 'pojezdná do 12 t' || 
+            requiredLoad === 'pojezdná do 40 t') {
+            
+            const allowedSystems = [
+                'ROTERRA',
+                'AQUA',
+                'LILO',
+                'COLUMBUS',
+                'TWIN',
+                'Nautilus Gera'
+            ];
+
+            if (!allowedSystems.includes(tank.Systém)) {
+                console.log(`Tank ${tank.Systém} filtered out - not suitable for load ${requiredLoad}`);
+                return false;
+            }
+        }
+
+
     
          // 3. Kontrola hloubky nátoku vs max překrytí zeminou
         const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']); 
@@ -674,8 +700,7 @@ class DestovkaTankFilter {
     calculateEarthworksScore(tank) {
         const maxCovering = parseFloat(tank['Max. překrytí zeminou (mm)']);
         const defaultInflowDepth = parseFloat(tank['Hloubka nátoku bez nástavce (mm)']);
-        const inflowOffsetFromTop = parseFloat(tank['Výška umístění nátoku vůči stropu nádrže'] || "0");
-        const actualInflowDepth = defaultInflowDepth + inflowOffsetFromTop;
+        const actualInflowDepth = defaultInflowDepth;
         
         // Skóre za překrytí zeminou (max 0.5)
         const coveringScore = Math.max(0, 1 - 
@@ -1200,21 +1225,20 @@ class DestovkaAccessoriesManager {
     
         const inflowDepth = parseInt(window.destovkaStepManager?.formData.get('inflowDepth'));
         const tankHeight = selectedTank.height || 0;
-        const inflowOffsetFromTop = parseFloat(tankData['Výška umístění nátoku vůči stropu nádrže'] || "0");
+        
     
         // Cover je opcionální
         const selectedCover = window.destovkaCart?.destGetItemsByStep(2)[1];
         const coverHeight = selectedCover?.height || 0;
     
         // Přepočítáváme skutečnou výšku s ohledem na offset
-        const actualInflowDepth = tankHeight + inflowOffsetFromTop;
+        const actualInflowDepth = tankHeight;
         const missingHeight = Math.max(0, inflowDepth - actualInflowDepth - coverHeight);
     
         return {
             inflowDepth,
             tankHeight,
             coverHeight,
-            inflowOffsetFromTop,
             actualInflowDepth,
             missingHeight,
             tankSystem: tankData['Systém']
@@ -1708,13 +1732,12 @@ if (quantityInput && firstExtension) {
 }
 
 class ExtensionCalculator {
-    constructor(tankSystem, requiredDepth, tankDefaultDepth, inflowOffsetFromTop, existingExtensions) {
+    constructor(tankSystem, requiredDepth, tankDefaultDepth, existingExtensions) {
         console.group('🔧 Initializing ExtensionCalculator');
         console.log('Parameters:', {
             tankSystem,
             requiredDepth,
             tankDefaultDepth,
-            inflowOffsetFromTop,
             extensionsProvided: !!existingExtensions
         });
      
@@ -1726,10 +1749,9 @@ class ExtensionCalculator {
         this.tankSystem = tankSystem;
         this.requiredDepth = parseFloat(requiredDepth);
         this.tankDefaultDepth = parseFloat(tankDefaultDepth);
-        this.inflowOffsetFromTop = parseFloat(inflowOffsetFromTop);
         
         // Přepočítáváme skutečnou výšku s ohledem na offset
-        const actualTankDepth = this.tankDefaultDepth + this.inflowOffsetFromTop;
+        const actualTankDepth = this.tankDefaultDepth;
         this.missingDepth = this.requiredDepth - actualTankDepth;
         
         // Použijeme již načtená data místo nového načítání
@@ -1746,7 +1768,6 @@ class ExtensionCalculator {
         console.log('Initialized with:', {
             actualTankDepth,
             missingDepth: this.missingDepth,
-            inflowOffsetFromTop: this.inflowOffsetFromTop,
             availableExtensions: this.availableExtensions.length
         });
         console.groupEnd();
@@ -2507,6 +2528,11 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
         
         this.categoriesContainer.style.display = 'none';
         this.productContainer.style.display = 'flex';
+
+        const existingDescription = this.container.querySelector('.destovka-category-description');
+        if (existingDescription) {
+            existingDescription.remove();
+        }
     
         if (category === 'Žádné') {
             
@@ -2526,7 +2552,8 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                 'Ponorné s plovákovým spínačem': 'Tato čerpadla fungují podle toho, jestli jsou zapojená v zásuvce a jestli mají ne/dostatek vody (to určuje plovák). V případě zapojení a dostatku vody se čerpadlo sepne, a to i v případě, že je zavřený kohout na hadici, proto této skutečnosti věnujte pozornost. Jedná se o nejlevnější typ čerpadel. Tato čerpadla jsou vhodná pro využití především k ručnímu zalévání zahrady. Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.',
                 'Ponorné s automatickým spínačem': 'Tato čerpadla fungují na principu poklesu tlaku, tedy pokud je otevřen kohoutek nebo sepnut postřikovač, tak se samo zapne a po zavření kohoutku nebo vypnutí postřikovače se samo vypne. Zároveň mají tato čerpadla instalovanou ochranu proti chodu na sucho, pokud by v nádrži došla voda. Tato čerpadla doporučujeme všem, kteří chtějí pohodlné zavlažování zahrady. Varianta čerpadla s plovoucím sáním zajišťuje čerpání nejčistší vodu z vodního sloupce nádrže, a je tedy velmi vhodná pro použití u automatického zavlažování zahrady. Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.',
                 'Systém pro zalévání a splachování': 'Tato čerpadla a jednotky jsou vhodná pro využití dešťové vody ke splachování WC v domě a k zalévání. Sestava RAINTRONIC funguje na principu dopouštění pitné vody do nádrže – pokud čidlo zjistí, že je nádrž prázdná, dopustí trochu vody, aby čerpadlo mohlo vodu čerpat do domu nebo k zálivce (do domu doporučujeme umístit tlakovou nádobu). Přítok pitné vody je nutné instalovat tak, aby se nedostal do styku s dešťovou vodou. Jednotka WILO RAIN funguje na principu přepínání mezi využitím dešťové či pitné vody uvnitř jednotky. V nádrži se nachází sací hadice s čidlem. Dokud je v nádrži dostatek vody, jednotka čerpá dešťovou vodu a po vyčerpání přepne na odběr vody z řádu nebo studny (na pitnou vodu). Jednotka WILO RAIN obsahuje certifikovaný sifon proti kontaminaci pitné vody. Jednotku RAIN1 doporučujeme pro menší rodinné domy s 2 toaletami, RAIN3 poté pro větší domy. Sestava RAINTRONIC zaujme cenou a jednoduchým systémem, jednotky WILO poté jednoduchou instalací a certifikovaným sifonem (doporučujeme při napojení na vodovodní řád).',
-                'Zahradní čerpadlo': 'Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.'
+                'Zahradní čerpadlo': 'Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.',
+                'Žádné': ''
             };
     
             const description = categoryDescriptions[category] || '';
@@ -2657,7 +2684,8 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                 titleDiv.insertAdjacentHTML('afterend', `<div class="destovka-product-specs">${specText}</div>`);
             }
         });
-    
+        
+        /*
         // Inicializace event listenerů pro výběr produktů
         const productCards = this.productContainer.querySelectorAll('.destovka-product-card');
         productCards.forEach(card => {
@@ -2681,6 +2709,7 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                 button.classList.add('destovka-selected');
             });
         });
+        */
     
         // Přidat tlačítko zpět pokud neexistuje
         if (!this.container.querySelector('.destovka-back-to-categories')) {
@@ -2695,6 +2724,8 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             backButton.addEventListener('click', () => this.showCategories());
             this.productContainer.insertAdjacentElement('beforebegin', backButton);
         }
+
+        this.productGenerator.initializeSelection(this.productContainer);
         
     }
 
@@ -3004,15 +3035,22 @@ class DestovkaGeigeryManager extends DestovkaBaseProductManager {
         });
     
         // Přidání celkové ceny pod všechny geigery
-        const totalContainer = document.createElement('div');
-        const productContainerParent = this.productContainer.parentElement;
-        totalContainer.className = 'destovka-product-potrubi-total-container';
-        totalContainer.innerHTML = `
-            <div class="destovka-product-potrubi-total">
-                Celková cena <span class="destovka-product-potrubi-total-price"></span>
-            </div>
-        `;
-        this.productContainer.appendChild(totalContainer);
+const totalContainer = document.createElement('div');
+totalContainer.className = 'destovka-product-potrubi-total-container';
+totalContainer.innerHTML = `
+    <div class="destovka-product-potrubi-total">
+        Celková cena <span class="destovka-product-potrubi-total-price"></span>
+    </div>
+`;
+this.productContainer.appendChild(totalContainer);
+
+// Nyní když je totalContainer v DOM, můžeme vložit popis před něj
+const gaigery_stock_description = document.createElement('div');
+gaigery_stock_description.className = 'destovka-in-stock-legenda';
+gaigery_stock_description.innerHTML = `
+    *Zašedlé varianty produktů nejsou skladem
+`;
+this.productContainer.insertBefore(gaigery_stock_description, totalContainer);
     
         this.initializeInputHandlers();
     }
@@ -3216,9 +3254,14 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
                 `;
             }
         });
+
+        
     
         this.productContainer.innerHTML = `
             ${allColumnsHTML}
+            <div class="destovka-in-stock-legenda">
+                 *Zašedlé varianty produktů nejsou skladem
+            </div>
             <div class="destovka-product-potrubi-total-container">
                 <div class="destovka-product-potrubi-total">
                     Celková cena <span class="destovka-product-potrubi-total-price">0 Kč vč. DPH</span>
@@ -3874,7 +3917,7 @@ class DestovkaVsakovaciManager {
                     // Určení, která kategorie má být doporučená
                     if (minArea <= 3 && minVolume <= 3 && category === 'Vsakovací jímka') {
                         isRecommended = true;
-                    } else if (minArea <= 7.2 && minVolume <= 7.2 && category === 'Vsakovací tunel') {
+                    } else if (minArea > 3 && minArea <= 7.2 && minVolume > 3 && minVolume <= 7.2 && category === 'Vsakovací tunel') {
                         isRecommended = true;
                     } else if ((minArea > 7.2 || minVolume > 7.2) && category === 'Vsakovací box') {
                         isRecommended = true;
@@ -3948,17 +3991,63 @@ class DestovkaVsakovaciManager {
     }
 
     getSelectedProducts() {
-        const selectedCard = this.productContainer?.querySelector('.destovka-product-selected');
-        if (!selectedCard) return [];
-    
-        const code = selectedCard.dataset.productCode;
-        if (!code) return [];
-    
-        return [{
-            code: code,
-            quantity: 1,
-            type: this.selectedCategory
-        }];
+        console.log('Getting selected products...', this.selectedCategory);
+        
+        if (this.selectedCategory === 'Žádné') {
+            return [];
+        }
+
+        const selectedProducts = [];
+        
+        switch(this.selectedCategory) {
+            case 'Vsakovací box':
+                // Pro vsakovací boxy
+                const boxInputs = this.container.querySelectorAll('.destovka-vsakbox-product-input');
+                boxInputs.forEach(input => {
+                    const quantity = parseInt(input.value) || 0;
+                    if (quantity > 0) {
+                        selectedProducts.push({
+                            code: input.dataset.code,
+                            quantity: quantity,
+                            type: 'vsakovací box'
+                        });
+                    }
+                });
+                break;
+
+            case 'Vsakovací jímka':
+                // Pro vsakovací jímky
+                const jimkaInputs = this.container.querySelectorAll('.destovka-product-potrubi-card-input');
+                jimkaInputs.forEach(input => {
+                    const quantity = parseInt(input.value) || 0;
+                    if (quantity > 0) {
+                        selectedProducts.push({
+                            code: input.dataset.code,
+                            quantity: quantity,
+                            type: 'vsakovací jímka'
+                        });
+                    }
+                });
+                break;
+
+            case 'Vsakovací tunel':
+                // Pro vsakovací tunely
+                const tunelInputs = this.container.querySelectorAll('.destovka-product-potrubi-card-input');
+                tunelInputs.forEach(input => {
+                    const quantity = parseInt(input.value) || 0;
+                    if (quantity > 0) {
+                        selectedProducts.push({
+                            code: input.dataset.code,
+                            quantity: quantity,
+                            type: 'vsakovací tunel'
+                        });
+                    }
+                });
+                break;
+        }
+
+        console.log('Selected products:', selectedProducts);
+        return selectedProducts;
     }
 
     showCategories() {
@@ -3997,11 +4086,23 @@ class DestovkaVsakovaciManager {
             this.categoriesContainer, 
             (category) => this.handleCategorySelection(category)
         );
+
+
+        const infoBox = this.productGenerator.createVsakInfoBox(
+            this.calculator.calculateMinArea(),
+            this.calculator.calculateMinVolume()
+        );
+        this.categoriesContainer.insertAdjacentHTML('beforeend', infoBox);
     }
 
     handleCategorySelection(category) {
         this.selectedCategory = category;
         
+
+        const existingDescription = this.container.querySelector('.destovka-category-description');
+        if (existingDescription) {
+            existingDescription.remove();
+        }
         // V DestovkaPumpManager
             if (category === 'Žádné') {
                 const currentItems = window.destovkaCart?.destGetItemsByStep(6) || [];
@@ -4114,10 +4215,12 @@ getProductsFromXML() {
     updateDisplay() {
         if (!this.productContainer) return;
     
-        // Vypočítáme minimální hodnoty
+        /*
         const minArea = this.calculator.calculateMinArea();
         const minVolume = this.calculator.calculateMinVolume();
-        
+
+        const infoBox = this.productGenerator.createVsakInfoBox(minArea, minVolume);
+        */
         if (this.selectedCategory === 'Žádné') {
             this.categoriesContainer.style.display = 'none';
             this.productContainer.style.display = 'flex';
@@ -4268,7 +4371,7 @@ getProductsFromXML() {
                 `;
             }
     
-            const infoBox = this.productGenerator.createVsakInfoBox(minArea, minVolume);
+            //const infoBox = this.productGenerator.createVsakInfoBox(minArea, minVolume);
     
             if (this.selectedCategory === 'Vsakovací box') {
                 const minArea = this.calculator.calculateMinArea();
@@ -4281,8 +4384,9 @@ getProductsFromXML() {
                 console.log('Vsak values:', vsakValues);
                 console.groupEnd();
         
-                this.productContainer.innerHTML = `
-                    ${this.productGenerator.createVsakInfoBox(minArea, minVolume)}
+                this.productContainer.innerHTML = 
+                    //${this.productGenerator.createVsakInfoBox(minArea, minVolume)} tohle bylo uvnitř těch uvozovek, ale nejde uvnitř uvozovek komentovat
+                    `
                     ${boxRecommendation ? `
                         <div class="destovka-vsak-recommendation">
                             <div class="destovka-vsak-recommendation-title">
@@ -4375,8 +4479,9 @@ getProductsFromXML() {
                 }
             }
             else {
-                this.productContainer.innerHTML = `
-                    ${infoBox}
+                this.productContainer.innerHTML = 
+                    //${infoBox}  bylo uvnitř uvozovek, ale nejde komentovat uvnitř nich. 
+                    `
                     ${recommendationHtml}
                     <div class="destovka-products-container">
                         ${this.getProductsFromXML().map(product => {
