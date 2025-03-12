@@ -13,7 +13,7 @@ class ProductStructureGenerator {
                     <img class="destovka-product-image"    
                          src="${feedData.imageLink}" 
                          alt="${data['Produkt']}"
-                         onerror="this.src='img/delete.png'" />
+                         onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/delete.png'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column;">
                     <div class="destovka-product-title">
@@ -330,6 +330,8 @@ class ProductStructureGenerator {
         `;
     }
 
+    
+
    
 
 formatAvailability(availability) {
@@ -490,7 +492,7 @@ createGeigeryProductItem(data) {
         return `
             <div class="destovka-product-card destovka-empty-product">
                 <div>
-                    <img class="destovka-product-image" src="img/delete.png" />
+                    <img class="destovka-product-image" src="https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/delete.png" />
                 </div>
                 <div class="destovka-product-title">
                     Žádná

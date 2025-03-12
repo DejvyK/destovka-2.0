@@ -71,26 +71,38 @@ class CartStructureGenerator {
     }
 
     // v cart-structure-generator.js
+// v cart-structure-generator.js
 createCartTotalItem(totalItems, totalPriceWithVAT) {
     const totalPriceWithoutVAT = this.calculatePriceWithoutVAT(totalPriceWithVAT);
+    
+    // Zjišťujeme, jestli jsme v mezikroku 7.5
+    const isIntermediate = window.destovkaStepManager?.currentStep === 7.5;
     
     return `
     <div class="destovka-cart-total-wrapper-wrapper">
         <div class="destovka-cart-total-buttons">
-            <button id="destovka-cart-email-button" class="destovka-cart-action-button">
+            ${isIntermediate ? `
+            <button id="destovka-cart-continue-button" class="destovka-cart-action-button destovka-cart-continue-button" onclick="window.destovkaStepManager.handleNextStep()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="destovka-cart-button-icon">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Pokračovat výběrem dalšího příslušenství
+            </button>
+            ` : ''}
+            <button id="destovka-cart-email-button" class="destovka-cart-action-button" onclick="(window.destovkaCartDisplayIntermediate || window.destovkaCartDisplay).showEmailPopup()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="destovka-cart-button-icon">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                 </svg>
-                Odeslat do e-mailu
+                Odeslat ${isIntermediate ? 'základní sadu do' : 'do'} e-mailu
             </button>
-            <button id="destovka-cart-checkout-button" class="destovka-cart-action-button destovka-cart-primary-button">
+            <button id="destovka-cart-checkout-button" class="destovka-cart-action-button destovka-cart-primary-button" onclick="(window.destovkaCartDisplayIntermediate || window.destovkaCartDisplay).handleAddToCart()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="destovka-cart-button-icon">
                     <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
                     <line x1="3" y1="6" x2="21" y2="6"/>
                     <path d="M16 10a4 4 0 0 1-8 0"/>
                 </svg>
-                Přidat do košíku 
+                Přidat ${isIntermediate ? 'základní sadu do' : 'do'} košíku 
             </button>
         </div>
         <div class="destovka-cart-total-wrapper">
@@ -101,6 +113,7 @@ createCartTotalItem(totalItems, totalPriceWithVAT) {
     </div>
     `;
 }
+
 
     // Helper metody pro výpočty
     extractPrice(price) {

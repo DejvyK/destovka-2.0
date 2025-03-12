@@ -13,18 +13,23 @@
     font-family: "Jost", sans-serif;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+*, h1, h2, h3, h4, h5, h6 {
+    font-family: "Jost", sans-serif;
 }
 
-html,
-body {
-    height: 100%;
-    width: 100%;
+
+aside.sidebar.sidebar-left {
+    display: none !important;
 }
-  
+
+footer#footer {
+    display: none !important;
+}
+
+.overall-wrapper {
+    display: none !important;
+}
+
   .destovka-wrapper-flex {
     display: flex;
     flex-direction: row;
@@ -42,6 +47,7 @@ body {
   }
 
   .destovka-site-logo {
+    display: none;
     width: 100%;
     display: flex;
     justify-content: center;
@@ -276,6 +282,27 @@ body {
     height: 300px;
     width: auto;
 }
+/* zde možná bude třeba nějaká úprava u toho img */
+
+.destovka-responsive-image-container {
+    display: flex;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Výchozí nastavení pro desktop obrázek */
+.destovka-desktop-image {
+    display: flex;
+    max-width: 100%;
+    height: auto;
+}
+
+/* Výchozí nastavení pro mobilní obrázek */
+.destovka-mobile-image {
+    display: none;
+    max-width: 100%;
+    height: auto;
+}
 
 .destovka-main-text h1 {
     margin-bottom: 32px; 
@@ -336,7 +363,7 @@ body {
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     max-width: 300px;
     width: 280px;
-    z-index: 1000;
+    z-index: 10001;
     font-size: 17px;
     line-height: 1.5;
     color: #333;
@@ -486,7 +513,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: 100001 !important;
     animation: destovkaSlideDown 0.3s ease-out;
 }
 
@@ -533,9 +560,10 @@ body {
 
 .destovka-input,
 .destovka-select {
-    padding: 5px;
-    width: 100%;
-    min-width: 120px;
+    padding: 5px !important;
+    width: 100% !important;
+    max-width: unset !important;
+    min-width: 120px !important;
     background: transparent;
 }
 
@@ -553,11 +581,12 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 1000001 !important;
 }
 
 .destovka-konfig-calc-modal-show {
     display: flex;
+  
 }
 
 .destovka-konfig-calc-modal-content {
@@ -1323,7 +1352,7 @@ body {
     border-radius: 8px;
     margin-bottom: 24px;
     width: 100%;
-    max-width: 100vw;
+    max-width: 1200px ;
 }
 
 .destovka-vsak-info-row {
@@ -1348,6 +1377,7 @@ body {
     border-radius: 8px;
     margin: 24px 0;
     width: 100%;
+    max-width: 1200px;
 }
 
 .destovka-vsak-recommendation-title {
@@ -2062,6 +2092,10 @@ button.destovka-accessory-select.destovka-selected {
     flex-direction: column;
 }
 
+#destovka-step7-5 .destovka-button-next {
+    background: var(--destovka-primary) !important;
+}
+
 
 
 .destovka-special-text {
@@ -2142,4 +2176,383 @@ button.destovka-product-select-button:disabled {
     width: 100%;
     max-width: 1300px;
     text-align: center;
+}
+
+
+
+
+/* E-mailový styling */
+
+
+.destovka-email-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: destovka-fade-in 0.3s;
+    z-index: 9999999 !important;
+}
+
+.destovka-email-popup-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    overflow: hidden;
+    animation: destovka-slide-in 0.3s;
+}
+
+.destovka-email-popup-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.destovka-email-popup-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #2b307c;
+}
+
+.destovka-email-popup-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
+
+.destovka-email-popup-close:hover {
+    color: #68c8f2;
+}
+
+.destovka-email-popup-body {
+    padding: 20px;
+}
+
+.destovka-email-popup-footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.destovka-email-popup-fade-out {
+    animation: destovka-fade-out 0.3s forwards;
+}
+
+/* Nové styly pro formulář v popup */
+.destovka-email-popup .destovka-required-field {
+    color: #57b35f;
+    margin-left: 3px;
+    font-weight: bold;
+}
+
+.destovka-email-popup .destovka-checkbox-wrapper {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 15px;
+}
+
+.destovka-email-popup .destovka-checkbox {
+    margin-right: 10px;
+    margin-top: 2px;
+}
+
+.destovka-email-popup .destovka-checkbox-label {
+    font-size: 14px;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.destovka-email-popup .destovka-checkbox-label a {
+    color: #68c8f2;
+    text-decoration: underline;
+}
+
+.destovka-email-popup .destovka-checkbox-label a:hover {
+    color: #57b35f;
+}
+
+.destovka-email-popup #destovka-email-send {
+    background: #57b35f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.destovka-email-popup #destovka-email-send:hover {
+    background: #68c8f2;
+}
+
+.destovka-email-popup #destovka-email-send:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.destovka-email-popup .destovka-label {
+    color: #2b307c;
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.destovka-email-popup .destovka-input {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.destovka-email-popup .destovka-input:focus {
+    border-color: #68c8f2;
+    outline: none;
+}
+
+@keyframes destovka-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes destovka-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes destovka-slide-in {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+
+.volume-difference-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+
+
+.destovka-vsakbox-product-input::-webkit-outer-spin-button,
+.destovka-vsakbox-product-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.destovka-vsakbox-product-input[type=number] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
+
+
+.destovka-vsakbox-product-input[type=number]:disabled {
+    -moz-appearance: textfield !important;
+}
+
+
+@-moz-document url-prefix() {
+    .destovka-vsakbox-product-input {
+        -moz-appearance: textfield !important;
+    }
+    .destovka-vsakbox-product-input:disabled {
+        -moz-appearance: textfield !important;
+    }
+}
+
+
+
+
+.destovka-vsak-details-grid {
+    display: flex;
+    width: 100%;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.destovka-vsak-details-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.destovka-vsak-details-header {
+    font-weight: 600;
+    color: var(--destovka-text-color);
+    text-align: center;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.destovka-vsak-details-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid var(--destovka-border-color);
+}
+
+.destovka-vsak-details-label {
+    color: var(--destovka-inactive);
+}
+
+.destovka-vsak-details-value {
+    font-weight: 500;
+    color: var(--destovka-text-color);
+}
+
+.destovka-vsak-details-value-warning {
+    color: #dc2626;
+}
+
+.destovka-vsak-details-value-success {
+    color: var(--destovka-success);
+}
+
+
+.destovka-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 9999999999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  
+  .destovka-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #386df2;
+    border-radius: 50%;
+    animation: destovka-spin 1s linear infinite;
+  }
+  
+  .destovka-loader-text {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #1b1b71;
+    font-weight: bold;
+  }
+  
+  @keyframes destovka-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .msg.msg-error {
+    display: none !important;
+}
+
+
+.destovka-steps-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000000;
+}
+
+.destovka-steps-popup-content {
+    width: 90%;
+    max-width: 500px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.destovka-steps-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--destovka-border-color);
+}
+
+.destovka-steps-popup-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.destovka-steps-popup-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.destovka-steps-popup-body {
+    padding: 24px 16px;
+}
+
+.destovka-steps-popup-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.destovka-steps-popup-option input {
+    width: 20px;
+    height: 20px;
+}
+
+.destovka-steps-popup-option label {
+    font-size: 16px;
+}
+
+.destovka-steps-popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px;
+    border-top: 1px solid var(--destovka-border-color);
+}
+
+.destovka-steps-popup-button {
+    background: var(--destovka-success);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.destovka-steps-popup-button:hover {
+    background: white;
+    color: var(--destovka-success);
+    outline: 1px solid var(--destovka-success);
 }

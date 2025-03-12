@@ -14,6 +14,12 @@ class DestovkaStepManager {
         this.initializeValidation();
         this.initializeNatokToggle();
         this.formData = new Map();
+        this.activeSteps = {
+            8: true, // Hladinoměry
+            9: true, // Geigery
+            10: true, // Potrubí
+            11: true  // Vsakovací objekt
+        };
     }
 
     initializeButtons() {
@@ -362,14 +368,34 @@ class DestovkaStepManager {
     handlePreviousStep() {
         if (this.currentStep > 1) {
             let newStep = this.currentStep - 1;
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasStepParam = urlParams.has('step');
 
-
-            if (newStep === 1) {
-                window.location.reload();
+            if (hasStepParam && (this.currentStep === 7.5 || this.currentStep === 12)) {
+                alert('Pokud jste přišel na konfigurátor skrz odkaz, tak nelze jít zpět');
                 return;
             }
 
+            /*
+            if (newStep === 1) {
+                // Vytvoříme URL s parametry z aktuálních formData
+                const urlParams = new URLSearchParams();
+                
+                // Přidáme hodnoty bez dodatečného encodování
+                this.formData.forEach((value, key) => {
+                    urlParams.append(key, value);  // Odstraněno encodeURIComponent
+                });
+                
+                // Použijeme současnou URL ale jen s parametry z formuláře
+                window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+            }
+                */
+
             if (this.currentStep === 7.5) {
+                const step7Items = window.destovkaCart.destGetItemsByStep(7);
+                step7Items.forEach(item => {
+                    window.destovkaCart.destRemoveItem(item.productCode);
+                });
                 this.changeStep(7);
                 return;
             }
@@ -378,11 +404,33 @@ class DestovkaStepManager {
                 this.changeStep(7.5);
                 return;
             }
+
+            if (this.currentStep > 8 && this.currentStep <= 12) {
+                let prevStep = this.currentStep - 1;
+                
+                // Hledáme předchozí aktivní krok
+                while (prevStep >= 8) {
+                    if (this.activeSteps[prevStep]) {
+                        this.changeStep(prevStep);
+                        return;
+                    }
+                    prevStep--;
+                }
+                
+                // Pokud žádný předchozí aktivní krok nenajdeme, jdeme na krok 7.5
+                this.changeStep(7.5);
+                return;
+            }
     
             // Speciální varování pouze při návratu z kroku 2 na 1
             if (this.currentStep === 2) {
                 const confirmed = confirm("Pozor, návratem na předchozí krok začnete znovu, opravdu chcete pokračovat?");
                 if (!confirmed) return;
+                
+               
+                //window._destovkaLastFormData = new Map(this.formData);
+                //this.formData.clear();
+                
             }
 
             if (this.currentStep === 6) {
@@ -523,6 +571,16 @@ class DestovkaStepManager {
                 window.destovkaCart.destAddItem(this.currentStep, productCode, 1);
             }
         }
+        else if (this.currentStep === 7) {
+            const selectedProducts = window.destovkaPumpAccessoryManager?.getSelectedProducts() || [];
+            if (selectedProducts.length > 0) {
+                selectedProducts.forEach(product => {
+                    window.destovkaCart.destAddItem(7, product.code, product.quantity, {
+                        type: 'pump-accessory'
+                    });
+                });
+            }
+        }
 
         
         if (this.currentStep === 6) {
@@ -587,7 +645,7 @@ class DestovkaStepManager {
         }
 
         if (this.currentStep === 7.5) {
-            this.changeStep(8);
+            this.showStepsSelectionPopup();
             return;
         }
 
@@ -601,6 +659,9 @@ class DestovkaStepManager {
 
     changeStep(newStep) {
         // Hide current step - upravená část
+        console.group("Step Change");
+        console.log("Changing to step:", newStep);
+        console.log("Current step:", this.currentStep);
     const currentStepId = this.currentStep.toString().replace('.', '-');  // Převede aktuální krok na formát s pomlčkou
     const currentContent = document.getElementById(`destovka-step${currentStepId}`);
     if (currentContent) {
@@ -666,7 +727,16 @@ class DestovkaStepManager {
             console.log("ahoj")
         }
         
-        if (newStep === 2 && window.destovkaTankManager) {
+        if (newStep === 2) {
+            window.destovkaTankManager = new DestovkaTankManager();
+            /*
+            console.log("Step manager na tanky change step");
+            console.log("Tank manager exists:", !!window.destovkaTankManager);
+            console.log("Tank manager data:", {
+                tanksDataLength: window.destovkaTankManager?.tanksData?.length,
+                feedDataSize: window.destovkaTankManager?.feedData?.size
+            });
+            */
             window.destovkaTankManager.updateTankDisplay(this.formData);
         }
         
@@ -677,6 +747,9 @@ class DestovkaStepManager {
         if (newStep === 1) {
             this.restoreFormData();
         }
+
+
+        console.groupEnd();
         
         this.updateButtonsState();
     }
@@ -690,6 +763,84 @@ class DestovkaStepManager {
             button.classList.toggle('destovka-button-disabled', this.currentStep === this.maxSteps);
         });
     }
+
+    showStepsSelectionPopup() {
+        const popup = document.createElement('div');
+        popup.className = 'destovka-steps-popup';
+        
+        // Vytvoření obsahu popup s checkboxy pro každý krok
+        popup.innerHTML = `
+            <div class="destovka-steps-popup-content">
+                <div class="destovka-steps-popup-header">
+                    <h2>Co dalšího chcete v konfigurátoru vidět?</h2>
+                    <button class="destovka-steps-popup-close">&times;</button>
+                </div>
+                <div class="destovka-steps-popup-body">
+                    <div class="destovka-steps-popup-option">
+                        <input type="checkbox" id="step8-checkbox" checked>
+                        <label for="step8-checkbox">Hladinoměry</label>
+                    </div>
+                    <div class="destovka-steps-popup-option">
+                        <input type="checkbox" id="step9-checkbox" checked>
+                        <label for="step9-checkbox">Geigery</label>
+                    </div>
+                    <div class="destovka-steps-popup-option">
+                        <input type="checkbox" id="step10-checkbox" checked>
+                        <label for="step10-checkbox">Potrubí</label>
+                    </div>
+                    <div class="destovka-steps-popup-option">
+                        <input type="checkbox" id="step11-checkbox" checked>
+                        <label for="step11-checkbox">Vsakovací objekt</label>
+                    </div>
+                </div>
+                <div class="destovka-steps-popup-footer">
+                    <button class="destovka-steps-popup-button">Pokračovat</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // Event listeners pro popup
+        popup.querySelector('.destovka-steps-popup-close').addEventListener('click', () => {
+            popup.remove();
+        });
+        
+        popup.querySelector('.destovka-steps-popup-button').addEventListener('click', () => {
+            // Uložíme výběr uživatele
+            this.activeSteps[8] = document.getElementById('step8-checkbox').checked;
+            this.activeSteps[9] = document.getElementById('step9-checkbox').checked;
+            this.activeSteps[10] = document.getElementById('step10-checkbox').checked;
+            this.activeSteps[11] = document.getElementById('step11-checkbox').checked;
+            
+            popup.remove();
+            
+            // Najít další aktivní krok a přejít na něj
+            this.findAndGoToNextActiveStep(7.5);
+        });
+    }
+
+    findAndGoToNextActiveStep(fromStep) {
+        let nextStep = fromStep + 0.5;
+        while (nextStep <= this.maxSteps) {
+            // Pokud jsme na kroku 7.5, další krok je 8, atd.
+            if (nextStep === 8 || nextStep === 9 || nextStep === 10 || nextStep === 11) {
+                if (this.activeSteps[nextStep]) {
+                    this.changeStep(nextStep);
+                    return;
+                }
+            } else {
+                // Pro kroky, které nejsou 8, 9, 10, 11 (např. 12) prostě přejdeme
+                this.changeStep(nextStep);
+                return;
+            }
+            nextStep++;
+        }
+        // Pokud není žádný další aktivní krok, přejdeme rovnou na krok 12
+        this.changeStep(12);
+    }
+
+    
 }
 
 class UnitConverter {
@@ -1110,7 +1261,10 @@ class DestovkaAccessoryManager {
         
             const coverInfo = hasCover ? `
                 <div class="destovka-accessory-included-info ${isInsufficient ? 'destovka-accessory-insufficient' : ''}">
-                    Vaše nádrž má v ceně ${isInsufficient ? 'pouze ' : ''}${includedCover} poklop
+                    Vaše nádrž má v ceně ${isInsufficient ? 'pouze ' : ''}${includedCover} poklop.
+
+                    K vámi vybrané nádrži byly nalezeny také následující poklopy, kterými je
+                    možné dodávaný poklop nahradit.
                 </div>` : '';
         
             let content = '';
@@ -1335,7 +1489,7 @@ class DestovkaAccessoryFilter {
         }
     
         try {
-            const response = await fetch('jsony/poklopy.json');
+            const response = await fetch('https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/jsony/poklopy.json');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
