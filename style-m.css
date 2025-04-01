@@ -1,5 +1,17 @@
 @media (max-width: 992px) {
 
+    .jen-pc {
+        display: none !important;
+    }
+
+    .jen-mobil {
+        display: unset !important;
+    }
+
+    .destovka-accessory-info-price {
+        margin-left: 0 !important;
+    }
+
     #header {
         display: none !important;
     }
@@ -222,6 +234,11 @@
     .destovka-product-geigery-card-info-row {
         flex-direction: column;
         align-items: center;
+    }
+
+    .destovka-product-geigery-card-container {
+        width: 85vw;
+        max-width: 450px ;
     }
 
     .destovka-cart-section {

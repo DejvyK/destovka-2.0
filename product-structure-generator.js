@@ -125,7 +125,7 @@ class ProductStructureGenerator {
                     <img class="destovka-product-image"
                          src="${feedData.imageLink}" 
                          alt="${data.Produkt}"
-                         onerror="this.src='img/radoby_placeholder.png'" />
+                         onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column;">
                     <div class="destovka-product-title">
@@ -170,7 +170,7 @@ class ProductStructureGenerator {
                     <div class="destovka-vsakbox-product-image">
                         <img src="${feedData.imageLink}" 
                              alt="${data.Produkt}"
-                             onerror="this.src='img/radoby_placeholder.png'"/>
+                             onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'"/>
                     </div>
                     <div class="destovka-vsakbox-product-info">
                         <div class="destovka-vsakbox-product-title">${data.Produkt}</div>
@@ -506,14 +506,14 @@ createGeigeryProductItem(data) {
         `
     }
 
-    createCategoryItem(category, imageUrl = 'img/radoby_placeholder.png') {
+    createCategoryItem(category, imageUrl = 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png') {
         return `
             <div class="destovka-product-card" data-category="${category}">
                 <div>
                     <img class="destovka-product-image"
                          src="${imageUrl}" 
                          alt="${category}"
-                         onerror="this.src='img/radoby_placeholder.png'" />
+                         onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'" />
                 </div>
                 <div style="display: flex; align-items:center; flex-direction: column; min-height: 90px; justify-content: center;">
                     <div class="destovka-product-title">

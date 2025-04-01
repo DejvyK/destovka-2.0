@@ -915,7 +915,7 @@ class DestovkaTankManager {
         return this.feedData.get(tankCode) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: 'img/radoby_placeholder.png',
+            imageLink: 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -993,7 +993,7 @@ class DestovkaTankManager {
                     <div class="destovka-tank-main">
                         <img src="${feedData.imageLink}" 
                              alt="${data['Typ nádrže']} ${data['Objemové označení']}"
-                             onerror="this.src='img/radoby_placeholder.png'" />
+                             onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'" />
                     </div>
                 </div>
                 <div class="destovka-tank-info">
@@ -1360,7 +1360,7 @@ class DestovkaAccessoriesManager {
                         <div class="destovka-accessory-item-image">
                             <img src="${feedData.imageLink}" 
                                  alt="${extension.Název}"
-                                 onerror="this.src='img/radoby_placeholder.png'" />
+                                 onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'" />
                         </div>
                     </div>
                     <div class="destovka-accessory-item-info">
@@ -1490,12 +1490,13 @@ class DestovkaAccessoriesManager {
                 content += `
                     <div class="destovka-extensions-section">
                         <h3 class="destovka-extensions-title">Dostupné nástavce</h3>
-                        <p>K vámi vybrané nádrži byly nalezeny následující nástavce. Vyberte počet nástavců pro
+                        <p class="jen-pc">K vámi vybrané nádrži byly nalezeny následující nástavce. Vyberte počet nástavců pro
                                 splnění chybějící výšky tak, aby číslo svítilo zeleně (od požadované hloubky nátoku je
                                 odečtena výška poklopu a hloubka nátoku do nádrže od horní hrany nádrže).
                                 Nástavce je poté možné při stavbě zkrátit na požadovanou výšku. Nástavce je také
                                 možné dokoupit při nenadálé změně na stavbě, při objednání k nádrži však ušetříte
                                 za další poštovné a vyvarujete se případným průtahům stavby. </p>
+                        <p class="jen-mobil">K vámi vybrané nádrži byly nalezeny následující nástavce. Zvolte počet nástavců dle požadované hloubky. Lze je zkrátit.<p>
                         <div class="destovka-extensions-grid">
                             ${compatibleExtensionsForDisplay.map(extension => 
                                 this.createExtensionItem(extension, heightData)
@@ -1636,7 +1637,7 @@ if (quantityInput && firstExtension) {
         return this.feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: 'img/radoby_placeholder.png',
+            imageLink: 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -2273,7 +2274,7 @@ class DestovkaFiltrationManager {
         return this.feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: 'img/radoby_placeholder.png',
+            imageLink: 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -2630,8 +2631,16 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
                 'Zahradní čerpadlo': 'Zahradní čerpadla jsou vhodným řešením pro čerpání vody z dešťových nádrží pro ruční závlahu i pro využití vody v domě. Pomocí sací hadice umístěné v nádrži je voda čerpána k dalšímu využití. Tím, že čerpadlo není umístěno v nádrži, je umožněna jednoduchá manipulace při přesunu k jiné nádrži a čerpadlo je vždy pod dohledem. Zahradní čerpadlo doporučujeme všem, kteří mají k dispozici více nádrží, ale nechtějí mít v každém čerpací techniku. Čerpadla GARDENA navíc mohou získat prodlouženou záruku, pokud do 3 měsíců od jeho zakoupení čerpadlo zaregistrujete na webu gardena.com.',
                 'Žádné': ''
             };
+            const categoryDescriptions2 = {
+                'Ponorné s plovákovým spínačem': 'Čerpadlo se spíná podle hladiny vody (plovákem), i když je kohout zavřený. Vhodné pro ruční zalévání. Cenově nejdostupnější varianta. GARDENA nabízí prodlouženou záruku při registraci do 3 měsíců.',
+                'Ponorné s automatickým spínačem': 'Spíná a vypíná se samo při otevření/zavření kohoutku. Chrání proti chodu na sucho. Varianta s plovoucím sáním čerpá čistší vodu. Ideální pro automatické zavlažování. GARDENA opět s možností prodloužené záruky.',
+                'Systém pro zalévání a splachování': 'Pro zalévání a WC v domě. RAINTRONIC dopouští vodu do nádrže, když je prázdná. WILO RAIN přepíná mezi dešťovou a pitnou vodou, obsahuje sifon proti kontaminaci. RAIN1 pro menší domy, RAIN3 pro větší. Jednoduchá instalace a provoz.',
+                'Zahradní čerpadlo': 'Vhodné pro ruční zalévání i využití vody v domě. Není uvnitř nádrže – snadno se přenáší mezi nádržemi a je vždy pod dohledem. Ideální pro více nádrží. GARDENA nabízí prodlouženou záruku při registraci do 3 měsíců.',
+                'Žádné': ''
+            };
     
             const description = categoryDescriptions[category] || '';
+            const description2 = categoryDescriptions2[category] || '';
             
             // Nejprve odstraníme existující popis, pokud existuje
             const existingDescription = this.container.querySelector('.destovka-category-description');
@@ -2645,7 +2654,9 @@ class DestovkaPumpManager extends DestovkaBaseProductManager {
             descriptionElement.innerHTML = `
                 <div class="destovka-category-type">
                     <div class="destovka-category-type-title">${category}</div>
-                    <p>${description}</p>
+                    <p class="jen-pc">${description}</p>
+                    <p class="jen-mobil">${description2}</p>
+
                 </div>
             `;
             
@@ -3217,7 +3228,7 @@ this.productContainer.insertBefore(gaigery_stock_description, totalContainer);
         return this.feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: 'img/radoby_placeholder.png',
+            imageLink: 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -4253,8 +4264,15 @@ class DestovkaVsakovaciManager {
                 'Vsakovací box': 'X-BOX jsou plastové bloky určené k zabudování pod zem (podzemní vsakovací objekty). Vedle dříve běžných galerií vyplněných štěrkem se v současnosti ve zvýšené míře budují podzemní vsakovací/retenční objekty. Čtyři bloky X-BOX nahradí 1 m3 štěrku (přibližně 1200 kg). Odvodňovací systém můžete poskládat libovolně. Lze položit i vice řad vedle sebe pro zvětšení vsakovací schopnosti. Jednotlivé bloky se pevně spojí dohromady pomocí spojek bloku. Na povrch lze bez rizika nehody rovnou vstoupit. Dále se do objektu napojí přes modul s kanálkem přívodní potrubí a objekt se obalí do geotextilie a zasype. Doporučujeme objekt instalovat na štěrkové lože (frakce 2-8 mm) o tloušťce min. 15 cm',
                 'Žádné': ''
             };
+            const categoryDescriptions2 = {
+                'Vsakovací jímka': 'RUR jímky mají dno s otvory a horní revizní komín. Možné připojit svody a další jímky. Obsypávají se kačírkem. Objem 500 nebo 1000 litrů.',
+                'Vsakovací tunel': 'Modulární systém tunelů, snadná montáž, obalení geotextilií, zasypání štěrkem. Možná revize i odvětrání. Doporučujeme do hloubky max. 2 m.',
+                'Vsakovací box': 'Bloky pod zem nahrazující štěrk. Rychlá montáž, libovolné sestavení, bezpečné pochozí. Obalí se geotextilií a uloží na štěrkové lože.',
+                'Žádné': ''
+            };
     
             const description = categoryDescriptions[category] || '';
+            const description2 = categoryDescriptions2[category] || '';
             
             // Vytvoříme popis před kontejnerem produktů
             const descriptionElement = document.createElement('div');
@@ -4262,7 +4280,8 @@ class DestovkaVsakovaciManager {
             descriptionElement.innerHTML = `
                 <div class="destovka-category-type">
                     <div class="destovka-category-type-title">${category}</div>
-                    <p>${description}</p>
+                    <p class="jen-pc">${description}</p>
+                    <p class="jen-mobil">${description2}</p>
                 </div>
             `;
             
@@ -5203,6 +5222,17 @@ class DestovkaCartDisplayManager {
             this.renderError();
         }
     }
+
+    clearContainer() {
+        if (this.container) {
+            // Necháme jen nadpis (h1), ostatní obsah smažeme
+            const title = this.container.querySelector('.destovka-main-text');
+            this.container.innerHTML = '';
+            if (title) {
+                this.container.appendChild(title);
+            }
+        }
+    }
  
     async loadXMLFeed() {
         try {
@@ -5287,7 +5317,7 @@ class DestovkaCartDisplayManager {
                 return this.cartGenerator.createCartItem({
                     ...item,
                     name: feedData?.title || item.name,
-                    imageUrl: feedData?.imageLink || 'img/radoby_placeholder.png',
+                    imageUrl: feedData?.imageLink || 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
                     price: this.extractPrice(feedData?.price || item.price),
                     productCode: item.productCode
                 });

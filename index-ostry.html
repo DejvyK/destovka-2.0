@@ -1,0 +1,570 @@
+<p>
+    <script>(function () {
+            const stylesToLoad = [
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/css/style.css?16',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/css/style-nadrz.css?1',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/css/style-accessory.css?1',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/css/style-m.css?5',
+                'https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap'
+            ];
+
+            // Přidání preconnect pro Google Fonts
+            const preconnects = [
+                { href: 'https://fonts.googleapis.com' },
+                { href: 'https://fonts.gstatic.com', crossorigin: true }
+            ];
+
+            // Přidání preconnect linků
+            preconnects.forEach(preconnect => {
+                const link = document.createElement('link');
+                link.rel = 'preconnect';
+                link.href = preconnect.href;
+                if (preconnect.crossorigin) link.crossOrigin = 'anonymous';
+                document.head.appendChild(link);
+            });
+
+            // Načtení všech CSS souborů
+            stylesToLoad.forEach(href => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = href;
+                document.head.appendChild(link);
+            });
+        })();</script>
+</p>
+<div class="destovka-configurator-overall-wrapper"
+    style="overflow-y: visible !important; position: absolute; width: 100vw !important; height: auto !important; min-height: 100vh; background: white !important; left: 0 !important; z-index: 99999 !important;">
+    <div class="destovka-wrapper-flex">
+        <section class="sidebarr">
+            <div class="destovka-side-container">
+                <div class="destovka-site-logo"><img
+                        src="https://cdn.myshoptet.com/usr/eshop.destovka.eu/user/logos/destovka-logo.svg"
+                        alt="destovka-logo-konfigurator" /></div>
+                <div class="destovka-sidebar">
+                    <div id="stepsList" class="destovka-steps">‎</div>
+                </div>
+            </div>
+        </section>
+        <main class="destovka-main-content">
+            <section id="destovka-step1" class="destovka-step-content destovka-active">
+                <div class="destovka-main-container">
+                    <section class="destovka-main-container-content">
+                        <div class="destovka-main-text">
+                            <h1>Konfigurátor vaší nádrže na dešťovou vodu</h1>
+                            <p class="jen-pc">Vítáme vás v průvodci výběrem nádrže na dešťovou vodu a potřebného příslušenství na pár
+                                kliknutí. Ušetří vám čas, který byste museli věnovat hledání a pročítání vlastností a
+                                parametrů jednotlivých nádrží. Na základě zpětné vazby od našich zákazníků a zkušeností
+                                za posledních 5 let jsme sestavili výpočet, který po zadání vašich základních potřeb
+                                vlastností nabídne vhodnou nádrž, alternativy a příslušenství, u kterého nemusíte
+                                kontrolovat, jestli se k nádrži hodí nebo ne. Výběr nádrže se základním příslušenstvím
+                                trvá v průměru pouze 10 minut. Za dalších 15 minut dokážete vybrat i vybavení pro
+                                kompletní systém dešťové vody na vaši stavbu. Každý krok je stručně popsán, aby vždy
+                                bylo jasné co, jak a proč právě vybíráte. V případě dotazů nebo potřeby individuální
+                                nabídky se nám neváhejte ozvat přes náš e-mail.</p>
+                            <p class="jen-mobil">Vyberte nádrž a příslušenství snadno a rychle. Průvodce vás provede výběrem za pár minut.</p>
+                            <button class="destovka-autofill-button">Vyplnit ukázková data</button>
+                            <div class="destovka-responsive-image-container"><img class="destovka-desktop-image"
+                                    src="/user/documents/upload/Dkral_konfigurator/img/grafika lepsi uvodni.png"
+                                    alt="Konfigurátor destovka" /> <img class="destovka-mobile-image"
+                                    src="/user/documents/upload/Dkral_konfigurator/img/grafika lepsi uvodni ctverec.png"
+                                    alt="Konfigurátor destovka" /></div>
+                            <script>document.querySelector('.destovka-autofill-button').addEventListener('click', () => {
+                                    const sampleData = {
+                                        volumeRange: 5000,      // Změněno z 3000 na 3500 aby se zobrazily nádrže kolem této hodnoty
+                                        concrete: 'yes',
+                                        soil: 'soil',
+                                        hsvDepth: 0,
+                                        load: 'pochozí',     // Ponecháno pochozí - zobrazí se i nádrže s vyšší nosností
+                                        inflowDiameter: '100/110',
+                                        outflowDiameter: '100/110',
+                                        inflowDepth: 60,
+                                        rainfallStation: 12
+                                    };
+
+                                    Object.entries(sampleData).forEach(([id, value]) => {
+                                        const element = document.getElementById(id);
+                                        if (element) {
+                                            element.value = value;
+                                            if (id === 'volumeRange' && window.volumeRange) {
+                                                window.volumeRange.updateValue(value);
+                                            }
+                                        }
+                                    });
+                                });</script>
+                        </div>
+                        <div class="destovka-form">
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">1. Objem nádrže (v
+                                            litrech)</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p class="jen-pc">Zadejte požadovaný objem nádrže v litrech. Pro běžnou zahradu
+                                                    doporučujeme min. objem 3000 litrů. Pokud si nejste jistí, využijte
+                                                    pro výpočet objemu „Kalkulačku“.</p>
+                                                <p class="jen-mobil">Zadejte objem v litrech. Doporučujeme min. 3000 l. Nejste si jistí? Použijte kalkulačku.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row">
+                                        <div class="destovka-range-wrapper"><input type="range" class="destovka-range"
+                                                id="volumeRange" min="700" max="25000" step="100" value="3000" /> <span
+                                                class="destovka-range-value" id="volumeValue">3 000</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">2. Betonáž</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p class="jen-pc">Nádrže k obetonování bývají levnější, ale jejich montáž je naopak
+                                                    pracnější a dražší. Vyberte možnost, kterou upřednostňujete.</p>
+                                                <p class="jen-mobil">Obetonování je levnější, ale náročnější na montáž. Vyberte, co vám vyhovuje.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><select class="destovka-select" id="concrete">
+                                            <option value="">Vyberte možnost</option>
+                                            <option value="no">Nechci betonovat</option>
+                                            <option value="yes">Nevadí mi betonovat</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">3. Typ
+                                            půdy</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>Vyberte, jaký typ půdy se nachází v místě výkopu pro nádrž.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><select class="destovka-select" id="soil">
+                                            <option value="">Vyberte typ půdy</option>
+                                            <option value="gravel">Štěrk</option>
+                                            <option value="sand">Písek</option>
+                                            <option value="soil">Hlína</option>
+                                            <option value="clay">Jíl</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">4. Hloubka HSV - 0
+                                            pokud nevíte</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>Jak hluboko se nachází hladina spodní vody (HSV), občas označována
+                                                    jako hladina podzemní vody.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><input type="number" class="destovka-input"
+                                            id="hsvDepth" min="0"
+                                            onkeydown="return event.keyCode !== 69 &amp;&amp; event.keyCode !== 187"
+                                            oninput="this.value = this.value.replace(/[eE\+\-]/g, '')" /> <button
+                                            class="destovka-unit-button" data-current-unit="cm">cm</button></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">5.
+                                            Zatížení</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p class="jen-pc">Jaké zatížení bude nádrž a poklop muset snést? Pro instalaci v
+                                                    místech parkoviště nebo příjezdové cesty doporučujeme min. zatížení
+                                                    do 3,5 tuny.</p>
+                                                <p class="jen-mobil">Vyberte požadované zatížení (např. pro příjezdovou cestu min. 3,5 t).</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><select class="destovka-select" id="load">
+                                            <option value="">Vyberte zatížení</option>
+                                            <option value="pochozí">pochozí</option>
+                                            <option value="pojezdná do 3,5 t">pojezdná do 3,5 t</option>
+                                            <option value="pojezdná do 12 t">pojezdná do 12 t</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">6. Průměr
+                                            nátoku</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>Jaký průměr má mít NÁTOK – přiváděcí potrubí – do nádrže? U rodinných
+                                                    domů je nejčastější DN100/110.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><select class="destovka-select" id="inflowDiameter">
+                                            <option value="">Vyberte průměr</option>
+                                            <option value="100/110">DN100/110</option>
+                                            <option value="125">DN125</option>
+                                            <option value="150/160">DN150/160</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">7. Průměr
+                                            výtoku</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>Jaký průměr má mít ODTOK - odvodné potrubí - z nádrže? Doporučujeme
+                                                    minimálně stejně velký jako nátok.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><select class="destovka-select"
+                                            id="outflowDiameter">
+                                            <option value="">Vyberte průměr</option>
+                                            <option value="100/110">DN100/110</option>
+                                            <option value="125">DN125</option>
+                                            <option value="150/160">DN150/160</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">8. Hloubka
+                                            nátoku</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>V jaké hloubce od terénu bude nátok do nádrže? Nádrže mají definováno
+                                                    max. zatížení zeminou, hodnota ovlivňuje i výběr nástavců. Pokud si
+                                                    nejste jisti, stiskněte tlačítko „Neznám hloubku nátoku“ a vyplňte
+                                                    vzdálenost od domu (respektive od nejvzdálenějšího okapového svodu).
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button class="destovka-toggle-natok" type="button">Neznám hloubku
+                                            nátoku</button>
+                                    </div>
+                                    <div id="destovka-direct-depth" class="destovka-input-row"><input type="number"
+                                            class="destovka-input" id="inflowDepth" min="0" /> <button
+                                            class="destovka-unit-button" data-current-unit="cm">cm</button></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group" id="destovka-distance-group" style="display: none;">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">9. Vzdálenost od
+                                            domu</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>Vyplňte vzdálenost nátoku nádrže od domu (respektive od
+                                                    nejvzdálenějšího svodu ze střechy).</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><input type="number" class="destovka-input"
+                                            id="distance" min="0" max="1000"
+                                            onkeydown="return event.keyCode !== 69 &amp;&amp; event.keyCode !== 187"
+                                            oninput="this.value = this.value.replace(/[eE\+\-]/g, '')" /> <button
+                                            class="destovka-unit-button" data-current-unit="m">m</button></div>
+                                </div>
+                            </div>
+                            <div class="destovka-form-group">
+                                <div class="destovka-input-wrapper">
+                                    <div class="destovka-label-wrapper"><label class="destovka-label">10. Nejbližší
+                                            stanice srážek</label>
+                                        <div class="destovka-tooltip">?
+                                            <div class="destovka-tooltip-content">
+                                                <p>Vyberte srážkoměrnou stanici nejbližší místu realizace nádrže. Pro
+                                                    lepší představu si můžete zobrazit „Náhled“ stanic.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="destovka-input-row"><select class="destovka-select"
+                                            id="rainfallStation">
+                                            <option value="">Vyberte stanici</option>
+                                            <option value="1">1 - Brno</option>
+                                            <option value="2">2 - Bruntál</option>
+                                            <option value="3">3 - Polička</option>
+                                            <option value="4">4 - Kamýk nad Vltavou</option>
+                                            <option value="5">5 - Klášterní Hradisko</option>
+                                            <option value="6">6 - Mariánské Lázně</option>
+                                            <option value="7">7 - Mšeno</option>
+                                            <option value="8">8 - Ostrava-Vítkovice</option>
+                                            <option value="9">9 - Petrovice</option>
+                                            <option value="10">10 - Pěčín</option>
+                                            <option value="11">11 - Plzeň-Doudlevce</option>
+                                            <option value="12">12 - Praha-Hostivař</option>
+                                            <option value="13">13 - Seč</option>
+                                            <option value="14">14 - Tábor</option>
+                                            <option value="15">15 - Telč</option>
+                                            <option value="16">16 - Bílá Třemešná</option>
+                                            <option value="17">17 - Třebíč</option>
+                                            <option value="18">18 - Uherské Hradiště</option>
+                                            <option value="19">19 - Vsetín</option>
+                                            <option value="20">20 - Vyškov-Brňany</option>
+                                            <option value="21">21 - Znojmo</option>
+                                            <option value="22">22 - Horské lokality</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="destovka-button-group-container">
+                        <div class="destovka-button-group"><button class="destovka-button destovka-button-back">
+                                Předchozí krok </button> <button class="destovka-button destovka-button-next">
+                                Pokračovat </button></div>
+                    </section>
+                </div>
+            </section>
+            <section id="destovka-step2" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <div class="destovka-main-text">
+                            <h1>Výběr nádrže</h1>
+                            <p>Dle vámi zadaných parametrů byly nalezeny následující nádrže. Pro zobrazení bližších
+                                informací o nádrži klikněte na tlačítko „Zobrazit informace o nádrži“.</p>
+                        </div>
+                        <div id="destovkaTanksContainer" class="destovka-tanks-container">.
+                            <!-- Sem se automaticky vloží 3 nádrže z JSONu --> ‎</div>
+                    </div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step3" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr nástavce k nádrži</h1>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step4" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr filtrace</h1>
+                        <p class="destovka-special-text jen-pc">Filtrace je potřebná pro ochranu čerpadla proti vniknutí
+                            větších částic a zajišťuje, že se voda nekazí a není třeba nádrž tak často čistit.
+                            Filtrujeme pomocí filtračního koše umístěného v nádrži nebo v podobě filtrační šachty
+                            předsazené nádrži. Filtrační koš se nasazuje přímo na nátokové potrubí pod revizní komín pro
+                            jednoduchou kontrolu a čištění. Filtrační šachta doporučujeme především k nízkým nádržím.
+                            Použití šachty znamená jednodušší obsluhu, ale další poklop na zahradě (filtrační šachtu
+                            není možné pojíždět).</p>
+                        <p class="destovka-special-text jen-mobil">Filtr chrání čerpadlo a další zařízení. Vyberte filtrační koš nebo šachtu.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step5" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr sifonu</h1>
+                        <p class="destovka-special-text jen-pc">Sifon se nasazuje do nádrže na stranu bezpečnostního přepadu.
+                            Sifon se instaluje především při napojení odtoku z nádrže do kanalizace pro zabránění
+                            prostupu zápachu a proti vniknutí hlodavců díky ochranné mřížce.</p>
+                        <p class="destovka-special-text jen-mobil">Sifon chrání před zápachem a hlodavci. Doporučeno při napojení na kanalizaci.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step6" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr Čerpadla</h1>
+                        <p class="destovka-special-text jen-pc">Čerpadlo s automatickým spínačem funguje na principu poklesu
+                            tlaku, tedy pokud je otevřen kohoutek, tak se samo sepne a poté samo vypne (tuto variantu
+                            doporučujeme nejčastěji). Čerpadlo s plovákovým spínačem funguje pouze podle toho, jestli je
+                            zapojené v zásuvce a jestli má ne/dostatek vody (to určuje plovák). Zahradní čerpadlo mimo
+                            nádrž je jednotka se sací hadicí, která se umístí do nádrže, na jednotku se napojí hadice
+                            jako na klasické čerpadlo (vhodné pro více nádrží i do interiérů). Jednotky pro zalévání a
+                            splachování doporučujeme pro využití dešťové vody v domě.</p>
+                        <p class="destovka-special-text jen-mobil">Doporučujeme čerpadlo s automatickým spínačem – zapne a vypne se automaticky samo.</p>
+                    </div>
+                    <div class="destovka-categories-container destovka-products-container">‎
+                        <!-- Sem se vygenerují kategorie --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step7" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Příslušenství k čerpadlu</h1>
+                        <p class="destovka-special-text jen-pc">K vámi vybranému čerpadlu můžeme doporučit následující sestavy
+                            příslušenství. Jedná se o kompletní řešení, které stačí napojit a můžete využívat vodu z
+                            vaší nádrže. Sada pro zalévání obsahuje klasickou hadici s ručním postřikovačem a spojkami
+                            pro napojení k vybranému čerpadlu. Sada pro rozvod vody po zahradě obsahuje PE potrubí,
+                            které se zakopává do země se spojkami a vodní zásuvkou pro napojení hadice k zalévání. Sada
+                            pro rozvod vody po zahradě a zalévání kombinuje předchozí dvě sady pro pohodlné kompletní
+                            řešení využití dešťové vody. Pokud se vám některá ze zmíněných sestav nezobrazuje, nebyla
+                            kompatibilní s vybraným čerpadlem. Nejvíce možností příslušenství nabízíme k čerpadlům
+                            GARDENA.</p>
+                        <p class="destovka-special-text jen-mobil">Vyberte sadu pro snadné využití vody z nádrže. Nabízíme řešení pro zalévání (hadice + postřikovač), rozvod vody (PE potrubí + zásuvky) nebo jejich kombinaci. Kompatibilita se liší podle čerpadla, nejvíce možností je u GARDENA.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <!-- mezikrok -->
+            <section id="destovka-step7-5" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Kontrola vybraných položek</h1>
+                        <p class="jen-pc">GRATULUJEME, ZÁKLADNÍ SADA JE PŘIPRAVENA! Právě jste sestavili sadu nádrže a základního
+                            příslušenství, kterou si můžete prohlédnout a zkontrolovat níže, případně ji vložit přímo do
+                            košíku nebo si ji nechat zaslat na e-mail. Zároveň můžete pokračovat ve výběru širšího
+                            příslušenství systému k akumulaci a zpracování dešťové vody, které můžeme doporučit k
+                            vybrané nádrži.</p>
+                        <p class="jen-mobil">🎉 GRATULUJEME! Máte hotovou sadu nádrže a základního příslušenství! Zkontrolujte ji, vložte do košíku nebo si ji nechte poslat e-mailem. Můžete pokračovat výběrem dalšího vybavení pro dešťovou vodu.</p>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step8" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr Hladinoměru</h1>
+                        <p class="destovka-special-text jen-pc">Hladinoměry jsou zařízení, která informují o stavu množství
+                            vody v nádrži, aniž by muselo dojít k otevření poklopu. Doporučujeme je umístit do technické
+                            místnosti. Hladinoměr eStudna je možné připojit i k mobilnímu zařízení. Hladinoměr H520
+                            zobrazuje stav pomocí displeje v %.</p>
+                        <p class="destovka-special-text jen-mobil">Zjišťují hladinu vody bez otevření nádrže. Doporučujeme do technické místnosti. eStudna lze připojit k mobilu, H520 zobrazuje stav na displeji.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step9" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr Geigeru</h1>
+                        <p class="destovka-special-text jen-pc">Geiger (nebo také geigr, gaigr, nebo gajgr) je spojovacím
+                            prvkem mezi svodem a podzemním potrubím. Spodní neboli „suchá“ varianta s klapkou má
+                            zvýšenou odolnost proti zamrzání. Součástí je také lapač nečistot (košík) a inspekční poklop
+                            pro snadné čištění. Boční neboli „mokrá“ varianta je integrované zařízení pro zajištění
+                            jímání a odtok vody z okapového systému. Přepážka, kterou je lapač vybaven vytváří sifon,
+                            který zabraňuje návratu nepříjemných pachů. Součástí je také lapač nečistot (síto) a
+                            inspekční poklop pro snadné čištění. Vtok pro svodovou rouru je možné vyříznout v průměru:
+                            50/80/90/100/110 mm.</p>
+                        <p class="destovka-special-text jen-mobil">Spojka mezi svodem a potrubím. „Suchá“ varianta je odolná proti mrazu, „mokrá“ odvádí vodu a zabraňuje zápachu. Obě mají lapač nečistot a poklop. Vtok lze přizpůsobit podle průměru svodu.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step10" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr Potrubí</h1>
+                        <p class="destovka-special-text jen-pc">Odpadní a kanalizační plastové trubky, tvarovky a revizní
+                            šachty, souhrnně označovány jako KG potrubí. Trubky a tvarovky se používají pro vytvoření
+                            kanalizačního potrubí v zemi mimo dům - vyznačují se totiž vysokou odolností vůči fyzickému
+                            i chemickému poškození. Díky širokému sortimentu všech možných rozměrů a různých odboček,
+                            klapek, výpustí a T-kusů lze sestavit systém dle vašich potřeb. Výhodou KG systému je také
+                            snadná montáž. Každý kus KG trubky či tvarovky je zakončen hrdlem s těsnícím kroužkem a
+                            hladkou stranou, které do sebe bez problémů zapadnou a sami se utěsní. Systémy jsou
+                            zobrazeny dle zadání vstupních parametrů, jsou rozděleny na systémy DN100/110, DN125 a
+                            DN150/160. V rámci e- shopu nabízíme dále širší sortiment včetně revizních šachet. Po
+                            přidání do košíku proto neváhejte navštívit i náš e-shop.</p>
+                        <p class="destovka-special-text jen-mobil">Plastové trubky a tvarovky pro venkovní kanalizaci. Odolné a snadno sestavitelné. Nabízíme více průměrů i revizní šachty. Kompatibilní podle vstupních parametrů.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step11" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Výběr Vsakovacího objektu</h1>
+                        <p class="destovka-special-text jen-pc">Vsakovací objekty zajišťují bezpečné zasáknutí vody (ať dešťové
+                            nebo přečištěné odpadní) do půdy. Tento objekt se navrhuje na objem jako by byla nádrž zcela
+                            plná a velikost objektu ovlivňuje především typ půdy, ve které je instalován a velikost a
+                            umístění střechy stavby. Na výběr je několik typů vsakovacích objektů. Štěrkové lože je
+                            jednoduché na instalaci, ale náročné na prostor (mezery mezi zrny štěrku pro vodu jsou malé,
+                            tedy je potřeba velký objem takového vsaku) a při vzrůstajících cenách kameniva a zemních
+                            prací se již často nevyplácí ani ekonomicky. Možnostmi pro zmenšení celkového objemu objektu
+                            je několik. Ať je to <b>vsakovací jímka</b> (jednoduchá montáž, snadný přístup v případě
+                            potřeby čištění, doporučujeme do 3000 litrů), <b>vsakovací tunel</b> (doporučujeme do 7000
+                            litrů) nebo <b>vsakovací box</b> (možná variabilita všech tří stran objektu, 1 objem tohoto
+                            boxu nahradí 3 objemy štěrku). Pro výpočet doporučené velikosti vsakovacího objektu vyberte
+                            oblast realizace stavby.</p>
+                        <p class="destovka-special-text jen-mobil">RUR jímky mají dno s otvory a horní revizní komín. Možné připojit svody a další jímky. Obsypávají se kačírkem. Objem 500 nebo 1000 litrů.</p>
+                    </div>
+                    <div class="destovka-products-container">‎ <!-- Sem se budou generovat produkty --></div>
+                    <div class="destovka-button-group"><button class="destovka-button destovka-button-back"> Předchozí
+                            krok </button> <button class="destovka-button destovka-button-next"> Pokračovat </button>
+                    </div>
+                </div>
+            </section>
+            <section id="destovka-step12" class="destovka-step-content">
+                <div class="destovka-main-container">
+                    <div class="destovka-main-text">
+                        <h1>Konečný seznam vybraných položek</h1>
+                        <p class="destovka-special-text jen-pc">GRATULUJEME, VÁŠ VÝBĚR JE PŘIPRAVEN! Právě jste sestavili sadu
+                            nádrže a příslušenství, kterou si můžete prohlédnout a zkontrolovat níže, případně ji vložit
+                            přímo do košíku nebo si ji nechat zaslat na e-mail. Úpravy výběru můžete provádět nyní nebo
+                            i po přidání do košíku a porovnat tak různé varianty. Kompletní výběr doporučujeme odeslat
+                            na vás e-mail pro možnost vrácení se do průvodce. Máte nějaké dotazy? Neváhejte nám výběr
+                            přeposlat společně s dotazem a my se vám ozveme! U vybrané nádrže doporučujeme detailně
+                            prostudovat montážní návod, který naleznete na stránce produktu v kartě „Související
+                            soubory“.</p>
+                        <p class="destovka-special-text jen-mobil">🎉 GRATULUJEME, VÁŠ VÝBĚR JE KOMPLETNÍ! Prohlédněte, vložte přímo do košíku nebo si ji nechte zaslat na e-mail, kde můžete porovnávat varianty. Dotazy? Napište nám. Doporučujeme projít montážní návod v kartě „Související soubory“ u dané nádrže.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>let overall_wraper = document.querySelector(".destovka-configurator-overall-wrapper");
+        let overall_wrap_shoptet = document.querySelector(".overall-wrapper");
+        overall_wrap_shoptet.parentElement.insertBefore(overall_wraper, overall_wrap_shoptet);
+
+
+        let header_q = document.querySelector("#header");
+        overall_wraper.parentElement.insertBefore(header_q, overall_wraper);</script>
+    <script>(function () {
+            const scriptsToLoad = [
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/JS/script-sidebar.js?1',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/JS/product-structure-generator.js?3',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/JS/cart-structure-generator.js?5',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/JS/script-main-container.js?47',
+                'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/JS/script.js?34'
+            ];
+
+            function loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.body.appendChild(script);
+                });
+            }
+
+            // Načítání skriptů sekvenčně
+            scriptsToLoad.reduce((promise, scriptSrc) => {
+                return promise.then(() => {
+                    return loadScript(scriptSrc);
+                }).catch(error => {
+                    console.error('Chyba při načítání skriptu:', scriptSrc, error);
+                });
+            }, Promise.resolve());
+        })();</script>
+</div>

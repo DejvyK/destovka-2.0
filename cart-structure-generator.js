@@ -37,10 +37,10 @@ class CartStructureGenerator {
 
         return `
             <div class="destovka-cart-card-container">
-                <img src="${cartItem.imageUrl || 'img/radoby_placeholder.png'}" 
+                <img src="${cartItem.imageUrl || 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'}" 
                      alt="${cartItem.name}"
                      style="max-width: 200px; max-height: 150px" 
-                     onerror="this.src='img/radoby_placeholder.png'" />
+                     onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'" />
 
                 <div class="destovka-cart-card-info-column">
                     <div class="destovka-cart-card-title">${cartItem.name}</div>

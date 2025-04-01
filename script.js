@@ -20,6 +20,7 @@ class DestovkaStepManager {
             10: true, // Potrubí
             11: true  // Vsakovací objekt
         };
+        this.initializeRemainingStepsCounter();
     }
 
     initializeButtons() {
@@ -365,46 +366,46 @@ class DestovkaStepManager {
         }
      }
 
-    handlePreviousStep() {
+     handlePreviousStep() {
         if (this.currentStep > 1) {
             let newStep = this.currentStep - 1;
             const urlParams = new URLSearchParams(window.location.search);
             const hasStepParam = urlParams.has('step');
-
+     
+            // Vyčistit vždy položky aktuálního kroku nejdříve
+            const stepItems = window.destovkaCart.destGetItemsByStep(this.currentStep);
+            stepItems.forEach(item => {
+                window.destovkaCart.destRemoveItem(item.productCode);
+            });
+     
+            // Speciální případy pro odstranění jiných položek
+            if (this.currentStep === 12) {
+                // Odstranit položky z kroku 11
+                const step11Items = window.destovkaCart.destGetItemsByStep(11);
+                step11Items.forEach(item => {
+                    window.destovkaCart.destRemoveItem(item.productCode);
+                });
+            }
+     
             if (hasStepParam && (this.currentStep === 7.5 || this.currentStep === 12)) {
                 alert('Pokud jste přišel na konfigurátor skrz odkaz, tak nelze jít zpět');
                 return;
             }
-
-            /*
-            if (newStep === 1) {
-                // Vytvoříme URL s parametry z aktuálních formData
-                const urlParams = new URLSearchParams();
-                
-                // Přidáme hodnoty bez dodatečného encodování
-                this.formData.forEach((value, key) => {
-                    urlParams.append(key, value);  // Odstraněno encodeURIComponent
-                });
-                
-                // Použijeme současnou URL ale jen s parametry z formuláře
-                window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
-            }
-                */
-
+     
             if (this.currentStep === 7.5) {
-                const step7Items = window.destovkaCart.destGetItemsByStep(7);
+                const step7Items = window.destovkaCart?.destGetItemsByStep(7);
                 step7Items.forEach(item => {
                     window.destovkaCart.destRemoveItem(item.productCode);
                 });
                 this.changeStep(7);
                 return;
             }
-    
+     
             if (this.currentStep === 8) {
                 this.changeStep(7.5);
                 return;
             }
-
+     
             if (this.currentStep > 8 && this.currentStep <= 12) {
                 let prevStep = this.currentStep - 1;
                 
@@ -421,38 +422,27 @@ class DestovkaStepManager {
                 this.changeStep(7.5);
                 return;
             }
-    
+     
             // Speciální varování pouze při návratu z kroku 2 na 1
             if (this.currentStep === 2) {
                 const confirmed = confirm("Pozor, návratem na předchozí krok začnete znovu, opravdu chcete pokračovat?");
                 if (!confirmed) return;
-                
-               
-                //window._destovkaLastFormData = new Map(this.formData);
-                //this.formData.clear();
-                
             }
-
+     
             if (this.currentStep === 6) {
                 const productContainer = document.querySelector('#destovka-step5 .destovka-products-container');
                 if (productContainer && !productContainer.querySelector('.destovka-product-card')) {
                     newStep = 4; // Jít na filtrace místo sifonů
                 }
             }
-
+     
             if (this.currentStep === 5) {
                 const step4Items = window.destovkaCart.destGetItemsByStep(4);
                 step4Items.forEach(item => {
                     window.destovkaCart.destRemoveItem(item.productCode);
                 });
             }
-    
-            // Vyčištění košíku pro aktuální krok
-            const stepItems = window.destovkaCart.destGetItemsByStep(this.currentStep);
-            stepItems.forEach(item => {
-                window.destovkaCart.destRemoveItem(item.productCode);
-            });
-
+     
             const itemsToRemove = window.destovkaCart.destGetAllItems().filter(item => {
                 if (item.step === this.currentStep) return true;
                 if (this.currentStep === 3 && item.type === 'cover') return true;
@@ -462,18 +452,12 @@ class DestovkaStepManager {
             itemsToRemove.forEach(item => {
                 window.destovkaCart.destRemoveItem(item.productCode);
             });
-
-            if (this.currentStep === 12) {
-                // Vrátíme se na krok 11 bez vyčištění košíku
-                this.changeStep(newStep);
-                return;
-            }
-    
+     
             this.changeStep(newStep);
         }
-    }
+     }
 
-     async handleNextStep() {
+    async handleNextStep() {
         if (this.currentStep === 2) {
             const selectedTank = window.destovkaCart?.destGetItemsByStep(2)[0];
             if (!selectedTank) {
@@ -508,39 +492,6 @@ class DestovkaStepManager {
                 }
             }
         } 
-        else if (this.currentStep === 9) {  // Geigery
-            const selectedGeigers = window.destovkaGeigeryManager?.getSelectedGeigers() || [];
-            if (selectedGeigers.length > 0) {
-                selectedGeigers.forEach(geiger => {
-                    window.destovkaCart.destAddItem(9, geiger.code, geiger.quantity, {
-                        type: geiger.type
-                    });
-                });
-            }
-        }
-        else if (this.currentStep === 11) { // Vsakovací objekt
-            console.log('Step 11 - handling next step');
-            const selectedProducts = window.destovkaVsakovaciManager?.getSelectedProducts() || [];
-            console.log('Selected products:', selectedProducts);
-            if (selectedProducts.length > 0) {
-                selectedProducts.forEach(product => {
-                    console.log('Adding to cart:', product);
-                    window.destovkaCart.destAddItem(11, product.code, product.quantity, {
-                        type: 'vsakovací objekt'
-                    });
-                });
-            }
-        }
-        else if (this.currentStep === 10) { // Potrubí
-            const selectedProducts = window.destovkaPotrubíManager?.getSelectedProducts() || [];
-            if (selectedProducts.length > 0) {
-                selectedProducts.forEach(product => {
-                    window.destovkaCart.destAddItem(10, product.code, product.quantity, {
-                        type: 'potrubí'
-                    });
-                });
-            }
-        }
         else if (this.currentStep === 3) { 
             const selectedProducts = window.destovkaPotrubíManager?.getSelectedProducts() || [];
             if (selectedProducts.length > 0) {
@@ -551,7 +502,7 @@ class DestovkaStepManager {
                 });
             }
         }
-        else if (/*this.currentStep === 3 || */this.currentStep === 4 || this.currentStep === 5 || this.currentStep === 8) {
+        else if (this.currentStep === 4 || this.currentStep === 5 || this.currentStep === 8) {
             const container = document.getElementById(`destovka-step${this.currentStep}`);
             const productsContainer = container.querySelector('.destovka-products-container');
             
@@ -561,7 +512,7 @@ class DestovkaStepManager {
             }
         
             const selectedCard = productsContainer.querySelector('.destovka-product-selected');
-            if (!selectedCard && this.currentStep !== 5) {  // Přidáno !==5
+            if (!selectedCard && this.currentStep !== 5) {
                 alert('Prosím vyberte produkt před pokračováním.');
                 return;
             }
@@ -571,19 +522,7 @@ class DestovkaStepManager {
                 window.destovkaCart.destAddItem(this.currentStep, productCode, 1);
             }
         }
-        else if (this.currentStep === 7) {
-            const selectedProducts = window.destovkaPumpAccessoryManager?.getSelectedProducts() || [];
-            if (selectedProducts.length > 0) {
-                selectedProducts.forEach(product => {
-                    window.destovkaCart.destAddItem(7, product.code, product.quantity, {
-                        type: 'pump-accessory'
-                    });
-                });
-            }
-        }
-
-        
-        if (this.currentStep === 6) {
+        else if (this.currentStep === 6) {
             const container = document.getElementById('destovka-step6');
             
             const categoriesContainer = container.querySelector('.destovka-categories-container');
@@ -620,7 +559,114 @@ class DestovkaStepManager {
                 });
             }
         }
-
+        else if (this.currentStep === 7) {
+            const selectedProducts = window.destovkaPumpAccessoryManager?.getSelectedProducts() || [];
+            if (selectedProducts.length > 0) {
+                selectedProducts.forEach(product => {
+                    window.destovkaCart.destAddItem(7, product.code, product.quantity, {
+                        type: 'pump-accessory'
+                    });
+                });
+            }
+            
+            if (!window.destovkaCartDisplayIntermediate) {
+                window.destovkaCartDisplayIntermediate = new DestovkaCartDisplayManager('intermediate');
+            }
+            this.changeStep(7.5);
+            return;
+        }
+        else if (this.currentStep === 7.5) {
+            this.showStepsSelectionPopup();
+            return;
+        }
+        else if (this.currentStep === 8) {
+            // Zpracujeme hladinoměry
+            const container = document.getElementById(`destovka-step${this.currentStep}`);
+            const productsContainer = container.querySelector('.destovka-products-container');
+            
+            if (productsContainer) {
+                const selectedCard = productsContainer.querySelector('.destovka-product-selected');
+                if (selectedCard) {
+                    const productCode = selectedCard.dataset.productCode;
+                    if (productCode) {
+                        window.destovkaCart.destAddItem(this.currentStep, productCode, 1);
+                    }
+                }
+            }
+            
+            // Najdeme další aktivní krok
+            let nextStep = 9;
+            while (nextStep <= 11) {
+                if (this.activeSteps[nextStep]) {
+                    this.changeStep(nextStep);
+                    return;
+                }
+                nextStep++;
+            }
+            
+            // Pokud žádný další aktivní krok nenajdeme, jdeme na finální krok
+            this.changeStep(12);
+            return;
+        }
+        else if (this.currentStep === 9) {  // Geigery
+            const selectedGeigers = window.destovkaGeigeryManager?.getSelectedGeigers() || [];
+            if (selectedGeigers.length > 0) {
+                selectedGeigers.forEach(geiger => {
+                    window.destovkaCart.destAddItem(9, geiger.code, geiger.quantity, {
+                        type: geiger.type
+                    });
+                });
+            }
+            
+            // Kontrola dalšího aktivního kroku
+            let nextStep = 10;
+            while (nextStep <= 11) {
+                if (this.activeSteps[nextStep]) {
+                    this.changeStep(nextStep);
+                    return;
+                }
+                nextStep++;
+            }
+            
+            // Pokud žádný další aktivní krok nenajdeme, jdeme na finální krok
+            this.changeStep(12);
+            return;
+        }
+        else if (this.currentStep === 10) { // Potrubí
+            const selectedProducts = window.destovkaPotrubíManager?.getSelectedProducts() || [];
+            if (selectedProducts.length > 0) {
+                selectedProducts.forEach(product => {
+                    window.destovkaCart.destAddItem(10, product.code, product.quantity, {
+                        type: 'potrubí'
+                    });
+                });
+            }
+            
+            // Kontrola dalšího aktivního kroku
+            if (this.activeSteps[11]) {
+                this.changeStep(11);
+                return;
+            }
+            
+            // Jinak jdeme na finální krok
+            this.changeStep(12);
+            return;
+        }
+        else if (this.currentStep === 11) { // Vsakovací objekt
+            const selectedProducts = window.destovkaVsakovaciManager?.getSelectedProducts() || [];
+            if (selectedProducts.length > 0) {
+                selectedProducts.forEach(product => {
+                    window.destovkaCart.destAddItem(11, product.code, product.quantity, {
+                        type: 'vsakovací objekt'
+                    });
+                });
+            }
+            
+            // Po vsakovacím objektu vždy jdeme na finální krok
+            this.changeStep(12);
+            return;
+        }
+    
         if (this.currentStep === 5) {  // Jsme na kroku sifonů
             setTimeout(() => {
                 const productContainer = document.querySelector('#destovka-step5 .destovka-products-container');
@@ -635,22 +681,7 @@ class DestovkaStepManager {
                 return; // Return pouze pokud nejsou produkty
             }
         }
-
-        if (this.currentStep === 7) {
-            if (!window.destovkaCartDisplayIntermediate) {
-                window.destovkaCartDisplayIntermediate = new DestovkaCartDisplayManager('intermediate');
-            }
-            this.changeStep(7.5);
-            return; // Přidán return pro jistotu
-        }
-
-        if (this.currentStep === 7.5) {
-            this.showStepsSelectionPopup();
-            return;
-        }
-
         
-     
         if (this.currentStep < this.maxSteps && this.validateStep(this.currentStep)) {
             this.saveFormData();
             this.changeStep(this.currentStep + 1);
@@ -677,8 +708,13 @@ class DestovkaStepManager {
         console.log('Adding active to:', newStepId); // Debug log
     }
 
-        if (newStep === 12 && !window.destovkaCartDisplay) {
-            window.destovkaCartDisplay = new DestovkaCartDisplayManager();
+        if (newStep === 12) {
+            if (!window.destovkaCartDisplay) {
+                window.destovkaCartDisplay = new DestovkaCartDisplayManager();
+            } else {
+                window.destovkaCartDisplay.clearContainer();
+                window.destovkaCartDisplay.init();
+            }
         }
 
         if (newStep === 11 && !window.destovkaVsakovaciManager) {
@@ -840,6 +876,70 @@ class DestovkaStepManager {
         this.changeStep(12);
     }
 
+    initializeRemainingStepsCounter() {
+        const logoContainer = document.querySelector('.destovka-site-logo');
+        if (!logoContainer) return;
+        
+        const remainingSteps = document.createElement('div');
+        remainingSteps.className = 'destovka-remaining-steps';
+        logoContainer.appendChild(remainingSteps);
+        
+        const updateRemainingSteps = () => {
+            // Získám aktuální krok ze sekce s třídou 'destovka-active'
+            const activeSection = document.querySelector('.destovka-step-content.destovka-active');
+            if (!activeSection) return;
+            
+            // Získání číselné hodnoty kroku z ID aktivní sekce
+            let currentStepId = activeSection.id.replace('destovka-step', '');
+            let currentStep = parseFloat(currentStepId.replace('-', '.'));
+            
+            // Pokud jsme na posledním kroku, skryjeme počítadlo
+            if (currentStep >= this.maxSteps) {
+                remainingSteps.style.display = 'none';
+                return;
+            } else {
+                remainingSteps.style.display = 'block';
+            }
+            
+            let stepsLeft = this.maxSteps - currentStep;
+            
+            
+            if (currentStep === 7.5) {
+                stepsLeft = this.maxSteps - 8;
+                
+            
+                for (let i = 8; i <= 11; i++) {
+                    if (!this.activeSteps[i]) {
+                        stepsLeft--;
+                    }
+                }
+            }
+            
+            remainingSteps.innerHTML = `Do konce konfigurátoru chybí <br> ${stepsLeft} ${stepsLeft === 1 ? 'krok' : stepsLeft >= 2 && stepsLeft <= 4 ? 'kroky' : 'kroků'}`;
+        };
+        
+
+        updateRemainingSteps();
+        
+    
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === 'attributes' && 
+                    mutation.attributeName === 'class' && 
+                    mutation.target.classList.contains('destovka-active')) {
+                        setInterval(updateRemainingSteps(),100);
+                    break;
+                }
+            }
+        });
+        
+    
+        document.querySelectorAll('.destovka-step-content').forEach(section => {
+            observer.observe(section, { attributes: true });
+        });
+        
+        this.stepsObserver = observer;
+    }
     
 }
 
@@ -1131,7 +1231,7 @@ class DestovkaAccessoryManager {
         return feedData.get(code) || {
             price: 'Cena na dotaz',
             availability: 'out of stock',
-            imageLink: 'img/radoby_placeholder.png',
+            imageLink: 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
             link: '#'
         };
     }
@@ -1195,7 +1295,7 @@ class DestovkaAccessoryManager {
                         <div class="destovka-accessory-item-image">
                             <img src="${feedData.imageLink}" 
                                  alt="${item.Název}"
-                                 onerror="this.src='img/radoby_placeholder.png'" />
+                                 onerror="this.src='https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png'" />
                         </div>
                     </div>
                     <div class="destovka-accessory-item-info">
@@ -1259,12 +1359,22 @@ class DestovkaAccessoryManager {
             const isInsufficient = hasCover && 
                 loadHierarchy[includedCover] < loadHierarchy[requiredLoad];
         
-            const coverInfo = hasCover ? `
+                const coverInfo = hasCover ? `
                 <div class="destovka-accessory-included-info ${isInsufficient ? 'destovka-accessory-insufficient' : ''}">
-                    Vaše nádrž má v ceně ${isInsufficient ? 'pouze ' : ''}${includedCover} poklop.
-
-                    K vámi vybrané nádrži byly nalezeny také následující poklopy, kterými je
-                    možné dodávaný poklop nahradit.
+                    <div class="destovka-accessory-info-header">
+                        Ve vstupních parametrech jste zvolili zatížení: <strong>${requiredLoad}</strong>
+                    </div>
+                    <div class="destovka-accessory-info-main">
+                        <div class="destovka-accessory-info-text">
+                            Poklop v ceně nádrže je <strong>${includedCover}</strong>
+                            ${isInsufficient ? 
+                            '<div class="destovka-accessory-warning-text">Doporučujeme vybrat jiný poklop!</div>' : 
+                            '<div class="destovka-accessory-success-text">Poklop je vhodný pro zvolené zatížení.</div>'}
+                        </div>
+                        <div class="destovka-accessory-info-price">
+                            0 Kč
+                        </div>
+                    </div>
                 </div>` : '';
         
             let content = '';
@@ -1394,7 +1504,7 @@ class DestovkaAccessoryManager {
         window.destovkaCart.destAddItem(2, coverCode, 1, {  
             name: coverName,
             price: this.extractPrice(feedData.price),
-            imageUrl: feedData.imageLink || 'img/radoby_placeholder.png',
+            imageUrl: feedData.imageLink || 'https://eshop.destovka.eu/user/documents/upload/Dkral_konfigurator/img/radoby_placeholder.png',
             type: 'cover',
             height: coverHeight
         });
