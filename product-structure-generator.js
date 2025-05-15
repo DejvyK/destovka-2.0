@@ -1,5 +1,7 @@
 class ProductStructureGenerator {
     formatPrice(price) {
+        if (!price) return '0 Kč';  // Ošetření pokud price je undefined nebo prázdné
+        
         const [value, currency] = price.split(' ');
         return `${parseInt(value).toLocaleString('cs-CZ')} Kč`;
     }

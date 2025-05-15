@@ -13,6 +13,13 @@
     font-family: "Jost", sans-serif;
 }
 
+@media (min-width:1000px)and(max-width:1200px) {
+    #header {
+        position: relative !important;
+        left: 250px !important;
+    }
+}
+
 *, h1, h2, h3, h4, h5, h6 {
     font-family: "Jost", sans-serif;
 }
@@ -45,6 +52,22 @@ button.destovka-autofill-button {
 button.destovka-autofill-button:hover {
     transform: scale(1.1);
 }
+
+.destovka-autofill-button:active {
+    animation: click-pulse 0.3s ease-out;
+  }
+  
+  @keyframes click-pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.95);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 
 
   .destovka-wrapper-flex {
@@ -310,7 +333,7 @@ button.destovka-autofill-button:hover {
 /* Výchozí nastavení pro desktop obrázek */
 .destovka-desktop-image {
     display: flex;
-    max-width: 1200px;
+    max-width: clamp(80%,100%,1200px);
     height: auto;
     margin: 0 auto;
 }
@@ -871,6 +894,12 @@ button.destovka-autofill-button:hover {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(55, 204, 95, 0.1); 
 }
+
+.destovka-product-potrubi-card-container img {
+    max-height: 130px !important;
+}
+
+
 .destovka-product-potrubi-card-title {
     font-size: 18px;
     font-weight: 600;
@@ -1370,7 +1399,7 @@ button.destovka-autofill-button:hover {
     border-radius: 8px;
     margin-bottom: 24px;
     width: 100%;
-    max-width: 1200px ;
+    max-width: clamp(80%,1200px,100%) ;
 }
 
 .destovka-vsak-info-row {
@@ -2088,8 +2117,7 @@ button.destovka-accessory-select.destovka-selected {
     font-size: 12px;
     font-weight: 500;
     margin: -16px -16px 16px -16px;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
+    border-radius: 6px !important;
     text-align: center;
     position: absolute;
 }
@@ -2637,12 +2665,19 @@ button.destovka-product-select-button:disabled {
 }
 
 .destovka-accessory-info-price {
-    font-weight: 600;
-    font-size: 18px;
-    color: var(--destovka-success);
-    min-width: 80px;
+    font-size: 14px;
+    color: white;
+    min-width: 200px;
+    border-radius: 6px;
     text-align: right;
     margin-left: 100px;
+    height: 50px !important;
+    background: var(--destovka-success);
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+
+
 }
 
 .destovka-accessory-included-info:not(.destovka-accessory-insufficient) {
@@ -2669,5 +2704,165 @@ button.destovka-product-select-button:disabled {
 .jen-mobil {
     display: none;
 }
+
+
+.destovka-cancel-cover {
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    background: rgb(220,38,28);
+    color: white !important;
+}
+
+.destovka-cancel-cover:hover {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+
+
+
+
+/* header deštovka */
+
+/*header*/
+.navigation-in ul.menu-level-2 a {
+	color: #000;
+}
+.navigation-in > ul > li.ext > a > span {
+	display: initial;
+}
+.submenu-arrow::after {
+	content: url('/user/documents/upload/sablona-nemazat/arrow_down_small-green.png');
+}
+.navigation-in > ul > li.exp > a,
+.navigation-in > ul > li > a:hover {
+	color: #37cc5f;
+}
+.navigation-in > ul > li {
+	border-left-color: #fff;
+}
+.navigation-in {
+	background-color: #fff;
+}
+.navigation-in > ul > li > a > b {
+	font-weight: 600;
+}
+.navigation-in > ul > li > a {
+	color: #0f0e41;
+	font-size: 19px;
+}
+.navigation-buttons > a[data-target='cart'] i {
+	display: none;
+}
+.header-top .btn.cart-count::before {
+	margin-right: 8px;
+	font-size: unset;
+}
+.btn.cart-count::before,
+a.btn.cart-count::before {
+	position: relative;
+	top: -2px;
+	-webkit-mask: url(/user/documents/upload/sablona-nemazat/svg/cart.svg) no-repeat 50% 50%;
+	mask: url(/user/documents/upload/sablona-nemazat/svg/cart.svg) no-repeat 50% 50%;
+	-webkit-mask-size: cover;
+	mask-size: cover;
+	content: '';
+	width: 20px;
+	height: 20px;
+	background-color: #fff;
+}
+.search #formSearchForm input {
+	background-color: #f5f7fa;
+	height: 47px;
+	border: 0;
+	border-radius: 0;
+	color: #bfc5d1;
+	font-size: 15px;
+	font-weight: 500;
+}
+.search #formSearchForm button {
+	height: 48px;
+	right: 0px;
+	font-size: 0;
+	background: url('/user/documents/upload/sablona-nemazat/search.png'), transparent;
+	border: 0;
+	background-position: center center;
+	background-repeat: no-repeat;
+}
+.search #formSearchForm {
+	/* max-width: 307px; */
+}
+.logindestovka {
+	color: #0f0e41;
+	font-size: 15px;
+	font-weight: 600;
+	text-align: right;
+	padding-right: 14px;
+}
+.logindestovka a {
+	color: #66cbf4;
+	font-weight: 700;
+	text-decoration: underline;
+}
+.logindestovka a:hover {
+	text-decoration: none;
+}
+/* .top-navigation-contacts a.project-email {
+	display: none;
+} */
+.top-navigation-contacts a > span {
+	white-space: nowrap;
+}
+.top-navigation-contacts a {
+	color: #37cc5f;
+	font-size: 15px;
+	font-weight: 600;
+	flex-wrap: nowrap;
+	display: flex;
+	align-items: center;
+}
+.top-navigation-contacts a.project-phone {
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	display: flex;
+	align-items: center;
+}
+.top-navigation-contacts a.project-phone::before {
+	-webkit-mask: url(/user/documents/upload/sablona-nemazat/svg/phone.svg) no-repeat 50% 50%;
+	mask: url(/user/documents/upload/sablona-nemazat/svg/phone.svg) no-repeat 50% 50%;
+	-webkit-mask-size: cover;
+	mask-size: cover;
+	content: '';
+	width: 12px;
+	height: 20px;
+	background-color: #37cc5f;
+}
+/* .top-navigation-contacts::before {
+	margin-right: 30px;
+	color: #73729f;
+	font-size: 13px;
+	font-weight: 600;
+	content: 'Volejte';
+} */
+#header .cart-count {
+	background-color: #37cc5f;
+	border: 1px solid #37cc5f;
+	color: #ffffff;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1;
+	padding: 14px 21px;
+}
+#header .cart-count:hover {
+	background-color: #fff;
+	color: #37cc5f;
+}
+.header-top .btn.cart-count:hover::before {
+	background-color: #37cc5f;
+}
+
+
 
 

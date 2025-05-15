@@ -21,6 +21,8 @@ class DestovkaStepManager {
             11: true  // Vsakovací objekt
         };
         this.initializeRemainingStepsCounter();
+        this.initStepTracking();
+        this.initGoogleAnalytics('G-L3VLRDXN5L');
     }
 
     initializeButtons() {
@@ -784,6 +786,7 @@ class DestovkaStepManager {
             this.restoreFormData();
         }
 
+        this.trackStepChange(newStep);
 
         console.groupEnd();
         
@@ -939,6 +942,105 @@ class DestovkaStepManager {
         });
         
         this.stepsObserver = observer;
+    }
+
+
+    initGoogleAnalytics(trackingId) {
+        // Kontrola, zda již existuje gtag
+        if (typeof window.gtag === 'undefined') {
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = function(){dataLayer.push(arguments);};
+            
+            // Základní nastavení
+            gtag('js', new Date());
+            gtag('config', trackingId, {
+                'groups': 'GA4',
+                'send_page_view': false
+            });
+            
+            // Načtení skriptu GA
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = `https://www.googletagmanager.com/gtag/js?id=${trackingId}`;
+            document.head.appendChild(script);
+            
+            console.log('Google Analytics inicializován s ID:', trackingId);
+        }
+    }
+
+    trackStepChange(stepNumber) {
+        // Kontrola, jestli existuje dataLayer a sessionStorage
+        if (typeof window.dataLayer !== 'undefined' && typeof sessionStorage !== 'undefined') {
+            const trackingKey = 'destovka_tracked_steps';
+            let trackedSteps = [];
+            
+            try {
+                // Načtení již sledovaných kroků
+                trackedSteps = JSON.parse(sessionStorage.getItem(trackingKey)) || [];
+                
+                // Kontrola, jestli tento krok již byl sledován
+                const normalizedStep = stepNumber.toString();
+                if (!trackedSteps.includes(normalizedStep)) {
+                    // Přidání kroku do sledovaných
+                    trackedSteps.push(normalizedStep);
+                    sessionStorage.setItem(trackingKey, JSON.stringify(trackedSteps));
+                    
+                    // Odeslání události do Google Analytics
+                    if (typeof window.gtag !== 'undefined') {
+                        gtag('event', 'destovka_step_change', {
+                            'step_number': normalizedStep,
+                            'step_name': this.getStepName(stepNumber)
+                        });
+                        
+                        // Také push do dataLayer pro kompatibilitu
+                        window.dataLayer.push({
+                            'event': 'destovka_step_change',
+                            'destovka_step_number': normalizedStep,
+                            'destovka_step_name': this.getStepName(stepNumber)
+                        });
+                        
+                        console.log(`GA event odeslán pro krok ${normalizedStep}`);
+                    }
+                } else {
+                    console.log(`Krok ${normalizedStep} již byl sledován v této session`);
+                }
+            } catch (error) {
+                console.error('Chyba při sledování kroku:', error);
+            }
+        }
+    }
+
+    initStepTracking() {
+        // Kontrola, jestli existuje sessionStorage
+        if (typeof sessionStorage !== 'undefined') {
+            // Vytvoříme klíč pro tuto session
+            const trackingKey = 'destovka_tracked_steps';
+            
+            // Pokud ještě nemáme uložené kroky, vytvoříme prázdné pole
+            if (!sessionStorage.getItem(trackingKey)) {
+                sessionStorage.setItem(trackingKey, JSON.stringify([]));
+            }
+        }
+    }
+    
+    getStepName(stepNumber) {
+        const stepNames = {
+            1: 'Vstupní parametry',
+            2: 'Výběr nádrže a poklopu',
+            3: 'Nástavce',
+            4: 'Filtrace',
+            5: 'Bezpečnostní přepad',
+            6: 'Čerpadla',
+            7: 'Příslušenství k čerpadlu',
+            7.5: 'Mezikrok - kontrola',
+            8: 'Hladinoměry',
+            9: 'Geigery',
+            10: 'Potrubí',
+            11: 'Vsakovací objekt',
+            12: 'Seznam položek'
+        };
+        
+        return stepNames[stepNumber] || `Krok ${stepNumber}`;
     }
     
 }
@@ -1371,8 +1473,8 @@ class DestovkaAccessoryManager {
                             '<div class="destovka-accessory-warning-text">Doporučujeme vybrat jiný poklop!</div>' : 
                             '<div class="destovka-accessory-success-text">Poklop je vhodný pro zvolené zatížení.</div>'}
                         </div>
-                        <div class="destovka-accessory-info-price">
-                            0 Kč
+                        <div class="destovka-accessory-info-price" id="destovka-cover-price">
+                            Vybráno 0 Kč
                         </div>
                     </div>
                 </div>` : '';
@@ -1452,9 +1554,40 @@ class DestovkaAccessoryManager {
                     item.classList.remove('destovka-accessory-selected');
                 });
                 selectedItem.classList.add('destovka-accessory-selected');
+
+                const coverPriceElement = popup.querySelector('#destovka-cover-price');
+                if (coverPriceElement) {
+                    coverPriceElement.textContent = 'Zrušit výběr placeného poklopu';
+                    coverPriceElement.classList.add('destovka-cancel-cover');
+                }
+
             });
         });
         
+    const coverPriceElement = popup.querySelector('#destovka-cover-price');
+    if (coverPriceElement) {
+        coverPriceElement.addEventListener('click', () => {
+            if (coverPriceElement.classList.contains('destovka-cancel-cover')) {
+                // Zrušit výběr
+                popup.querySelectorAll('.destovka-accessory-select').forEach(btn => {
+                    btn.classList.remove('destovka-selected');
+                    btn.textContent = 'Vybrat';
+                });
+                
+                popup.querySelectorAll('.destovka-accessory-item').forEach(item => {
+                    item.classList.remove('destovka-accessory-selected');
+                });
+                
+                // Obnovit původní text
+                coverPriceElement.textContent = 'Vybráno 0 Kč';
+                coverPriceElement.style.cursor = '';
+                coverPriceElement.style.color = '';
+                coverPriceElement.classList.remove('destovka-cancel-cover');
+            }
+        });
+    }
+
+
         if (closeButton) {
             closeButton.addEventListener('click', () => {
                 this.closePopup(popup);
@@ -1651,12 +1784,14 @@ class DestovkaAccessoryFilter {
                 return false;
             }
 
-            // Kontrola výšky
+            // Kontrola výšky - vymazano na vyžádání.
+            /*
             const minHeight = parseInt(cover['Minimální výška (mm)']);
             if (minHeight > missingHeight) {
                 console.log(`Height mismatch: ${minHeight}mm > ${missingHeight}mm`);
                 return false;
             }
+                */
 
             // Kontrola zatížení
             const coverLoadIndex = loadHierarchy[cover.Zatížení];

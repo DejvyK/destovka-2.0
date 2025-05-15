@@ -1421,21 +1421,37 @@ class DestovkaAccessoriesManager {
             
             if (firstExtension) {
                 const extensionHeight = parseInt(firstExtension['Výška (mm)']);
-                const neededCount = Math.ceil(heightData.missingHeight / extensionHeight);
-                const totalHeight = neededCount * extensionHeight;
-                const cutLength = totalHeight - heightData.missingHeight;
                 
-                extensionRecommendation = `
-                    <div class="destovka-extension-recommendation">
-                        <div class="destovka-extension-recommendation-title">
-                            Doporučené použití nástavců:
+                // Upravená část pro případy, kdy není potřeba nástavec
+                if (heightData.missingHeight <= 0) {
+                    extensionRecommendation = `
+                        <div class="destovka-extension-recommendation">
+                            <div class="destovka-extension-recommendation-title">
+                                Informace o nástavcích:
+                            </div>
+                            <div class="destovka-extension-recommendation-text">
+                                Nástavce aktuálně nejsou potřeba, ale můžete je využít v budoucnu pro zvýšení hloubky nátoku
+                            </div>
                         </div>
-                        <div class="destovka-extension-recommendation-text">
-                            Měli byste použít ${neededCount}× nástavec ${firstExtension.Název} (${extensionHeight} mm)
-                            ${cutLength > 0 ? `, přičemž jeden nástavec se uřeže o ${cutLength} mm` : ''}
+                    `;
+                } else {
+                    // Původní kód pro doporučení
+                    const neededCount = Math.ceil(heightData.missingHeight / extensionHeight);
+                    const totalHeight = neededCount * extensionHeight;
+                    const cutLength = totalHeight - heightData.missingHeight;
+                    
+                    extensionRecommendation = `
+                        <div class="destovka-extension-recommendation">
+                            <div class="destovka-extension-recommendation-title">
+                                Doporučené použití nástavců:
+                            </div>
+                            <div class="destovka-extension-recommendation-text">
+                                Měli byste použít ${neededCount}× nástavec ${firstExtension.Název} (${extensionHeight} mm)
+                                ${cutLength > 0 ? `, přičemž jeden nástavec se uřeže o ${cutLength} mm` : ''}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }
      
             let content = `
@@ -1446,9 +1462,9 @@ class DestovkaAccessoriesManager {
                     </div>
                     <div class="destovka-height-info-item">
                         <span>Chybějící výška:</span>
-                        <strong>${heightData.missingHeight} mm</strong>
+                        <strong>${Math.max(0, heightData.missingHeight)} mm</strong>
                     </div>
-                    <div class="destovka-height-info-dynamic" data-missing="${heightData.missingHeight}">
+                    <div class="destovka-height-info-dynamic" data-missing="${Math.max(0, heightData.missingHeight)}">
                         <div class="destovka-height-info-item destovka-height-missing">
                             <span>S těmito nástavci chybějící výška:</span>
                             <strong class="destovka-height-value destovka-height-negative">0 mm</strong>
@@ -1460,11 +1476,11 @@ class DestovkaAccessoriesManager {
                     </div>
                 </div>
                 <div>${extensionRecommendation}<div>
-                
-                `;
+            `;
      
             const extensionResults = await this.processExtensionCalculations(heightData);
-            if (extensionResults.error) {
+            // Změněná logika - i když je error, pokud je to "není potřeba nástavce", pokračujeme dál
+            if (extensionResults.error && extensionResults.message !== 'Nástavce nejsou nutné, ale můžete je použít v budoucnu') {
                 content += `
                     <div class="destovka-error-message">
                         ${extensionResults.message}
@@ -1474,7 +1490,10 @@ class DestovkaAccessoriesManager {
                 return;
             }
      
-            const compatibleExtensionsForDisplay = this.getCompatibleExtensions(heightData);
+            // Upravená část pro získávání nástavců - vždy používáme kompatibilní nástavce, i když chybějící výška je 0 nebo negativní
+            const compatibleExtensionsForDisplay = heightData.missingHeight <= 0 ? 
+                compatibleExtensions : 
+                this.getCompatibleExtensions(heightData);
             
             if (compatibleExtensionsForDisplay.length === 0) {
                 content += `
@@ -1487,16 +1506,26 @@ class DestovkaAccessoriesManager {
                     </div>
                 `;
             } else {
+                // Upravený text pro případ, kdy není potřeba nástavec
+                const descriptionText = heightData.missingHeight <= 0 ?
+                    `K vámi vybrané nádrži byly nalezeny následující nástavce. Aktuálně sice nejsou potřeba, 
+                     ale můžete je přidat pro budoucí využití nebo pokud byste chtěli změnit hloubku nátoku.` :
+                    `K vámi vybrané nádrži byly nalezeny následující nástavce. Vyberte počet nástavců pro
+                     splnění chybějící výšky tak, aby číslo svítilo zeleně (od požadované hloubky nátoku je
+                     odečtena výška poklopu a hloubka nátoku do nádrže od horní hrany nádrže).
+                     Nástavce je poté možné při stavbě zkrátit na požadovanou výšku. Nástavce je také
+                     možné dokoupit při nenadálé změně na stavbě, při objednání k nádrži však ušetříte
+                     za další poštovné a vyvarujete se případným průtahům stavby.`;
+                
+                const mobileText = heightData.missingHeight <= 0 ?
+                    `K nádrži nalezeny tyto nástavce. Nyní nejsou nutné, ale můžete je přidat.` :
+                    `K nádrži nalezeny nástavce. Zvolte počet dle potřebné hloubky. Lze je zkrátit.`;
+                
                 content += `
                     <div class="destovka-extensions-section">
                         <h3 class="destovka-extensions-title">Dostupné nástavce</h3>
-                        <p class="jen-pc">K vámi vybrané nádrži byly nalezeny následující nástavce. Vyberte počet nástavců pro
-                                splnění chybějící výšky tak, aby číslo svítilo zeleně (od požadované hloubky nátoku je
-                                odečtena výška poklopu a hloubka nátoku do nádrže od horní hrany nádrže).
-                                Nástavce je poté možné při stavbě zkrátit na požadovanou výšku. Nástavce je také
-                                možné dokoupit při nenadálé změně na stavbě, při objednání k nádrži však ušetříte
-                                za další poštovné a vyvarujete se případným průtahům stavby. </p>
-                        <p class="jen-mobil">K vámi vybrané nádrži byly nalezeny následující nástavce. Zvolte počet nástavců dle požadované hloubky. Lze je zkrátit.<p>
+                        <p class="jen-pc">${descriptionText}</p>
+                        <p class="jen-mobil">${mobileText}</p>
                         <div class="destovka-extensions-grid">
                             ${compatibleExtensionsForDisplay.map(extension => 
                                 this.createExtensionItem(extension, heightData)
@@ -1509,25 +1538,27 @@ class DestovkaAccessoriesManager {
             this.productContainer.innerHTML = content;
             this.initializeCounters();
             
-            const quantityInput = document.querySelector(".destovka-quantity-input");
-if (quantityInput && firstExtension) {
-    const extensionHeight = parseInt(firstExtension['Výška (mm)']);
-    const neededCount = Math.ceil(heightData.missingHeight / extensionHeight);
-    quantityInput.value = Math.ceil(neededCount);
-    
-    // Vyvoláme událost change, aby se aktualizovaly všechny závislé hodnoty
-    const event = new Event('change', {
-        bubbles: true,
-        cancelable: true,
-    });
-    quantityInput.dispatchEvent(event);
-}
-
+            // Nastavení doporučeného množství pouze pokud je potřeba nástavec
+            if (heightData.missingHeight > 0) {
+                const quantityInput = document.querySelector(".destovka-quantity-input");
+                if (quantityInput && firstExtension) {
+                    const extensionHeight = parseInt(firstExtension['Výška (mm)']);
+                    const neededCount = Math.ceil(heightData.missingHeight / extensionHeight);
+                    quantityInput.value = Math.ceil(neededCount);
+                    
+                    // Vyvoláme událost change, aby se aktualizovaly všechny závislé hodnoty
+                    const event = new Event('change', {
+                        bubbles: true,
+                        cancelable: true,
+                    });
+                    quantityInput.dispatchEvent(event);
+                }
+            }
         } catch (error) {
             console.error('Chyba při aktualizaci zobrazení:', error);
             this.handleError(error.message);
         }
-     }
+    }
 
     initializeCounters() {
         const counters = this.container.querySelectorAll('.destovka-quantity-counter');
@@ -1740,13 +1771,31 @@ if (quantityInput && firstExtension) {
                         cutAmount: Math.max(0, parseInt(ext['Výška (mm)']) - heightData.missingHeight)
                     }))
                 };
+            } else {
+                // Když není potřeba přidávat nástavce (missingHeight je 0 nebo negativní)
+                // Místo chybové zprávy vrátíme všechny kompatibilní nástavce
+                const compatibleExtensions = this.accessoriesData.filter(ext => 
+                    ext.Systém === heightData.tankSystem
+                );
+                
+                if (compatibleExtensions.length === 0) {
+                    return {
+                        error: true,
+                        message: 'Pro tento systém nejsou k dispozici žádné nástavce'
+                    };
+                }
+                
+                console.log('Zobrazuji všechny kompatibilní nástavce, i když nejsou potřeba');
+                return {
+                    combinations: compatibleExtensions.map(ext => ({
+                        extensions: [ext],
+                        totalHeight: parseInt(ext['Výška (mm)']),
+                        needsCutting: false,
+                        cutAmount: 0
+                    })),
+                    message: 'Nástavce nejsou nutné, ale můžete je použít v budoucnu'
+                };
             }
-    
-            return {
-                error: true,
-                message: 'Není potřeba přidávat nástavce'
-            };
-    
         } catch (error) {
             console.error('Chyba při kalkulaci nástavců:', error);
             return {
@@ -3388,16 +3437,29 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
         const container = this.productContainer;
         if (!container) return;
     
-        container.querySelectorAll('.destovka-product-potrubi-card-input-container').forEach(inputContainer => {
-            const input = inputContainer.querySelector('input');
+        console.log('Inicializace handlerů pro potrubí...');
+        
+        const inputs = container.querySelectorAll('.destovka-product-potrubi-card-input-container');
+        console.log(`Nalezeno ${inputs.length} vstupů`);
+        
+        inputs.forEach(inputContainer => {
+            const input = inputContainer.querySelector('.destovka-product-potrubi-card-input');
             const decreaseBtn = inputContainer.querySelector('.destovka-decrease-quantity');
             const increaseBtn = inputContainer.querySelector('.destovka-increase-quantity');
     
-            if (decreaseBtn && increaseBtn && input) {
+            if (!input) {
+                console.warn('Input element nebyl nalezen v kontejneru', inputContainer);
+                return;
+            }
+    
+            console.log(`Připojuji posluchače k inputu s kódem: ${input.dataset.code}`);
+    
+            if (decreaseBtn && increaseBtn) {
                 decreaseBtn.style.cursor = 'pointer';
                 increaseBtn.style.cursor = 'pointer';
     
                 decreaseBtn.addEventListener('click', () => {
+                    console.log('Klik na snížení množství');
                     const currentValue = parseInt(input.value) || 0;
                     if (currentValue > 0) {
                         input.value = currentValue - 1;
@@ -3406,19 +3468,29 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
                 });
     
                 increaseBtn.addEventListener('click', () => {
+                    console.log('Klik na zvýšení množství');
                     const currentValue = parseInt(input.value) || 0;
                     input.value = currentValue + 1;
                     this.updateTotalPrice();
                 });
     
                 input.addEventListener('change', () => {
+                    console.log('Změna hodnoty inputu');
                     let value = parseInt(input.value) || 0;
                     if (value < 0) value = 0;
                     input.value = value;
                     this.updateTotalPrice();
                 });
+                
+                // Ujistíme se, že počítadlo je správně iniciované
+                setTimeout(() => {
+                    this.updateTotalPrice();
+                }, 500);
             }
         });
+        
+        // Pro jistotu zkusíme aktualizovat celkovou cenu po inicializaci
+        this.updateTotalPrice();
     }
 
     updateTotalPrice() {
@@ -3426,19 +3498,40 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
         if (!container) return;
     
         let totalPrice = 0;
+        
         container.querySelectorAll('.destovka-product-potrubi-card-input').forEach(input => {
             const quantity = parseInt(input.value) || 0;
             const code = input.dataset.code;
-            const feedData = this.getFeedDataForProduct(code);
-            const price = this.extractPrice(feedData?.price || '0');
-            totalPrice += quantity * price;
+            
+            if (!code) {
+                console.warn('Vstup nemá kód produktu', input);
+                return;
+            }
+            
+            const feedData = this.feedData.get(code);
+            if (!feedData) {
+                console.warn(`Feed data nejsou k dispozici pro kód: ${code}`);
+                return;
+            }
+            
+            const priceString = feedData.price;
+            console.log(`Produkt ${code}: Cena "${priceString}", Množství: ${quantity}`);
+            
+            const price = this.extractPrice(priceString);
+            console.log(`Produkt ${code}: Extrahovaná cena: ${price}`);
+            
+            const itemTotal = quantity * price;
+            console.log(`Produkt ${code}: Mezisoučet: ${itemTotal}`);
+            
+            totalPrice += itemTotal;
         });
+        
+        console.log(`Celková cena: ${totalPrice}`);
     
         const totalPriceElement = container.querySelector('.destovka-product-potrubi-total-price');
         if (totalPriceElement) {
-            const withoutVAT = Math.round(totalPrice / 1.21);
             totalPriceElement.innerHTML = `
-                <span class="destovka-product-potrubi-total-price-without-vat">${withoutVAT.toLocaleString('cs-CZ')} Kč</span> bez DPH<br>
+                <span class="destovka-product-potrubi-total-price-without-vat">${Math.round(totalPrice / 1.21).toLocaleString('cs-CZ')} Kč</span> bez DPH<br>
                 <span class="destovka-product-potrubi-total-price">${totalPrice.toLocaleString('cs-CZ')} Kč</span> vč DPH
             `;
         }
@@ -3446,7 +3539,16 @@ class DestovkaPotrubíManager extends DestovkaBaseProductManager {
 
     extractPrice(priceString) {
         if (!priceString) return 0;
-        return parseInt(priceString.replace(/[^0-9]/g, ''));
+        if (typeof priceString === 'number') return priceString;
+        
+        // Pro jistotu odfiltrování jen čísel
+        const numericValue = priceString.replace(/[^0-9]/g, '');
+        if (!numericValue) {
+            console.warn(`Neplatný formát ceny: "${priceString}"`);
+            return 0;
+        }
+        
+        return parseInt(numericValue);
     }
 
     getSelectedPotrubí() {
@@ -5658,7 +5760,7 @@ closeEmailPopup(popup) {
         popup.remove();
     }, 300);
 }
-
+/*
 handleAddToCart() {
     if (confirm('Přidáme Vámi vybrané předměty do košíku a přesuneme Vás k objednávce')) {
         console.group('Přidávání do košíku');
@@ -5828,6 +5930,282 @@ handleAddToCart() {
         });
     }
 }
+    */
+
+handleAddToCart() {
+    if (confirm('Přidáme Vámi vybrané předměty do košíku a přesuneme Vás k objednávce')) {
+        console.group('Přidávání do košíku');
+        console.log('Začínám proces přidávání do košíku');
+        
+        // Vytvořit a zobrazit loader
+        const loaderOverlay = document.createElement('div');
+        loaderOverlay.className = 'destovka-loader-overlay';
+        loaderOverlay.innerHTML = `
+            <div class="destovka-spinner"></div>
+            <div class="destovka-loader-text">Přidávám položky do košíku...</div>
+        `;
+        document.body.appendChild(loaderOverlay);
+        
+        const cartItems = window.destovkaCart?.destGetAllItems() || [];
+        console.log(`Celkem položek k přidání: ${cartItems.length}`);
+        
+        // Mapa pro sledování, které produkty byly odeslány
+        const requestedProducts = new Map(); 
+        
+        // Přidáme XMLHttpRequest listener (kromě fetch)
+        const originalXHROpen = XMLHttpRequest.prototype.open;
+        const originalXHRSend = XMLHttpRequest.prototype.send;
+        
+        XMLHttpRequest.prototype.open = function(method, url) {
+            this._url = url;
+            return originalXHROpen.apply(this, arguments);
+        };
+        
+        XMLHttpRequest.prototype.send = function(data) {
+            if (typeof this._url === 'string' && this._url.includes('/action/Cart/addCartItem')) {
+                console.log('XHR request na Cart/addCartItem:', this._url);
+                console.log('XHR request data:', data);
+                
+                // Extrahujeme productCode z dat
+                if (data) {
+                    try {
+                        const formData = new FormData();
+                        
+                        // Pokud jsou data string (URL encoded)
+                        if (typeof data === 'string') {
+                            const params = new URLSearchParams(data);
+                            const productCode = params.get('productCode');
+                            if (productCode) {
+                                requestedProducts.set(productCode, { status: 'pending' });
+                                console.log(`XHR požadavek na přidání: ${productCode}`);
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Chyba při zpracování XHR dat:', err);
+                    }
+                }
+                
+                // Přidáme listener na loaded událost
+                this.addEventListener('load', function() {
+                    console.log('XHR response received:', this.status, this.responseText);
+                    
+                    if (this.status === 200) {
+                        try {
+                            const response = JSON.parse(this.responseText);
+                            if (response.code === 200 && response.payload && response.payload.cartItems) {
+                                response.payload.cartItems.forEach(item => {
+                                    if (item.code) {
+                                        console.log(`XHR úspěšně přidán produkt: ${item.code}`);
+                                        requestedProducts.set(item.code, { status: 'success' });
+                                    }
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Chyba při parsování XHR odpovědi:', error);
+                        }
+                    }
+                });
+            }
+            return originalXHRSend.apply(this, arguments);
+        };
+        
+        // Přidáme ještě Ajax listener pro jQuery požadavky
+        if (typeof $ !== 'undefined' && $.ajax) {
+            const originalAjax = $.ajax;
+            $.ajax = function(options) {
+                if (options.url && options.url.includes('/action/Cart/addCartItem')) {
+                    console.log('Ajax request na Cart/addCartItem:', options);
+                    
+                    const originalSuccess = options.success;
+                    options.success = function(data) {
+                        console.log('Ajax success:', data);
+                        if (data && data.code === 200 && data.payload && data.payload.cartItems) {
+                            data.payload.cartItems.forEach(item => {
+                                if (item.code) {
+                                    console.log(`Ajax úspěšně přidán produkt: ${item.code}`);
+                                    requestedProducts.set(item.code, { status: 'success' });
+                                }
+                            });
+                        }
+                        if (originalSuccess) originalSuccess.apply(this, arguments);
+                    };
+                }
+                return originalAjax.apply(this, arguments);
+            };
+        }
+
+        // Funkce pro přidání položky do košíku
+        const addItemToCart = (item) => {
+            return new Promise((resolve) => {
+                console.log(`Přidávám položku: ${item.productCode}, množství: ${item.quantity}, step: ${item.step}, type: ${item.type}`);
+                
+                // Zaznamenat požadavek
+                requestedProducts.set(item.productCode, { status: 'pending' });
+                
+                // Speciální zpracování pro položky z kroku 2
+                if (item.step === 2) {
+                    // Kontrola, zda jde o nádrž nebo poklop
+                    const isTank = !item.type || item.type === 'tank';
+                    const isCover = item.type === 'cover';
+                    
+                    console.log(`Položka ${item.productCode} je z kroku 2, typ: ${isTank ? 'nádrž' : (isCover ? 'poklop' : 'jiný')}`);
+                    
+                    if (isTank) {
+                        // Pro nádrže používáme speciální parametr
+                        shoptet.cartShared.addToCart({
+                            productCode: item.productCode,
+                            amount: item.quantity,
+                            surchargeParameterValueId: {281: 1316}
+                        });
+                    } else {
+                        // Pro poklopy a ostatní položky z kroku 2 standardní přidání
+                        shoptet.cartShared.addToCart({
+                            productCode: item.productCode,
+                            amount: item.quantity
+                        });
+                        
+                        // Pokusíme se také přidat s parametrem, pokud by to nefungovalo standardně
+                        setTimeout(() => {
+                            if (requestedProducts.get(item.productCode)?.status !== 'success') {
+                                console.log(`Zkouším alternativní přidání pro ${item.productCode}`);
+                                shoptet.cartShared.addToCart({
+                                    productCode: item.productCode,
+                                    amount: item.quantity,
+                                    surchargeParameterValueId: {281: 1316}
+                                });
+                            }
+                        }, 400);
+                    }
+                } else {
+                    // Standardní přidání pro ostatní kroky
+                    shoptet.cartShared.addToCart({
+                        productCode: item.productCode,
+                        amount: item.quantity
+                    });
+                }
+                
+                // Počkáme na dokončení požadavku
+                setTimeout(() => {
+                    resolve();
+                }, 800); // Delší interval pro jistotu
+            });
+        };
+
+        // Postupně přidáváme položky do košíku
+        const processItems = async () => {
+            try {
+                // Přidáváme položky postupně
+                for (const item of cartItems) {
+                    await addItemToCart(item);
+                }
+                
+                // Počkáme ještě 3 sekundy pro dokončení všech požadavků
+                console.log('Čekám na dokončení všech požadavků...');
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Zjistíme, které produkty byly úspěšně přidány a které ne
+                const successfulProducts = [];
+                const failedProducts = [];
+                
+                // Kontrola v requestedProducts
+                for (const [code, status] of requestedProducts.entries()) {
+                    if (status.status === 'success') {
+                        successfulProducts.push(code);
+                    } else {
+                        failedProducts.push(code);
+                    }
+                }
+                
+                console.log('Zpracování dokončeno. Výsledky:');
+                console.log('Úspěšně přidáno dle requestedProducts:', successfulProducts);
+                console.log('Nezdařilo se dle requestedProducts:', failedProducts);
+                
+                // Alternativní přístup: zkontrolujeme košík pomocí dataLayer
+                const shoptetCart = (window.dataLayer && window.dataLayer[0] && window.dataLayer[0].shoptet) 
+                    ? window.dataLayer[0].shoptet.cart 
+                    : null;
+                
+                if (shoptetCart && shoptetCart.items && Array.isArray(shoptetCart.items)) {
+                    console.log('Kontrola košíku pomocí dataLayer:', shoptetCart.items);
+                    
+                    // Seznam kódů produktů v košíku
+                    const cartProductCodes = shoptetCart.items.map(item => item.productCode);
+                    
+                    // Aktualizace seznamu úspěšně přidaných a nepřidaných položek
+                    const allProductCodes = cartItems.map(item => item.productCode);
+                    
+                    // Nejprve předpokládáme, že vše jsou failed produkty
+                    const dataLayerFailedProducts = [...allProductCodes];
+                    
+                    // Odstraníme úspěšně přidané produkty
+                    cartProductCodes.forEach(code => {
+                        const index = dataLayerFailedProducts.indexOf(code);
+                        if (index !== -1) {
+                            dataLayerFailedProducts.splice(index, 1);
+                        }
+                        
+                        // Přidáme do successful, pokud tam ještě není
+                        if (!successfulProducts.includes(code)) {
+                            successfulProducts.push(code);
+                        }
+                    });
+                    
+                    console.log('Úspěšně přidáno dle dataLayer:', cartProductCodes);
+                    console.log('Nezdařilo se dle dataLayer:', dataLayerFailedProducts);
+                    
+                    // Sjednotíme seznamy nepřidaných produktů
+                    dataLayerFailedProducts.forEach(code => {
+                        if (!failedProducts.includes(code)) {
+                            failedProducts.push(code);
+                        }
+                    });
+                } else {
+                    console.warn('DataLayer není k dispozici nebo neobsahuje správná data košíku');
+                }
+                
+                // Vytvoříme URL pro přesměrování
+                let redirectUrl = 'https://eshop.destovka.eu/kosik/';
+                
+                // Přidáme nepřidané produkty do URL, pokud nějaké jsou
+                if (failedProducts.length > 0) {
+                    const params = new URLSearchParams();
+                    failedProducts.forEach(code => {
+                        params.append('failed', encodeURIComponent(code));
+                    });
+                    redirectUrl += `?${params.toString()}`;
+                }
+                
+                console.log(`Přesměrování na: ${redirectUrl}`);
+                
+                // Odstraníme loader před přesměrováním
+                if (loaderOverlay && loaderOverlay.parentNode) {
+                    loaderOverlay.remove();
+                }
+                
+                // Přesměrování na košík
+                window.location.href = redirectUrl;
+                
+            } catch (error) {
+                console.error('Chyba při zpracování položek:', error);
+                
+                // Odstraníme loader v případě chyby
+                if (loaderOverlay && loaderOverlay.parentNode) {
+                    loaderOverlay.remove();
+                }
+                
+                // Nouzové přesměrování na košík
+               window.location.href = 'https://eshop.destovka.eu/kosik/';
+            }
+        };
+
+        // Spustíme zpracování
+        processItems().finally(() => {
+            console.log('Proces přidávání do košíku dokončen');
+            console.groupEnd();
+        });
+    }
+}
+
 
  }
 
